@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, EyeOff, X } from 'lucide-react';
 import rumpelIcon from '../assets/rumpel.png';
 import rumpelText from '../assets/rumpeltext.png';
@@ -17,6 +17,24 @@ export default function LoginScreen({ onLogin }) {
   const [age, setAge] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [phraseIndex, setPhraseIndex] = useState(0);
+
+  const welcomePhrases = [
+    'Welcome Back',
+    'Great to see you!',
+    'Ready to get organized?',
+    'Let\'s do this!',
+    'Welcome, friend!'
+  ];
+
+  useEffect(() => {
+    if (mode === 'login') {
+      const interval = setInterval(() => {
+        setPhraseIndex((prev) => (prev + 1) % welcomePhrases.length);
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [mode, welcomePhrases.length]);
 
   const steps = ['age', 'name', 'email', 'password'];
   const currentStep = mode === 'signup' ? steps[step] : null;
@@ -118,11 +136,13 @@ export default function LoginScreen({ onLogin }) {
         <div className="login-container">
           {/* Back button */}
           <button className="login-back" onClick={() => setMode(null)}>
-            ← Back
+            <X size={24} />
           </button>
 
           {/* Title */}
-          <h1 className="login-form-title">Welcome Back</h1>
+          <h1 className="login-form-title rotating-text" key={phraseIndex}>
+            {welcomePhrases[phraseIndex]}
+          </h1>
           <p className="login-form-subtitle">Enter your details to continue</p>
 
           {/* Form */}
