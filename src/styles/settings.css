@@ -16,6 +16,7 @@
   text-align: center; 
   margin-bottom: 24px; 
   position: relative; 
+  transition: background-color 0.7s ease; 
 }
 
 .profile-avatar-wrap { 
@@ -33,6 +34,7 @@
   align-items: center; 
   justify-content: center; 
   overflow: hidden; 
+  transition: background-color 0.7s ease, border-color 0.7s ease; 
 }
 
 .profile-edit-btn { 
@@ -48,6 +50,7 @@
   align-items: center; 
   justify-content: center; 
   cursor: pointer; 
+  transition: background-color 0.7s ease, border-color 0.7s ease; 
 }
 
 .profile-name { 
@@ -56,6 +59,7 @@
   font-weight: 700; 
   color: var(--orange); 
   margin-bottom: 4px; 
+  transition: color 0.7s ease; 
 }
 
 .profile-role { 
@@ -66,6 +70,7 @@
   text-transform: uppercase; 
   color: var(--brown-m); 
   margin-bottom: 10px; 
+  transition: color 0.7s ease; 
 }
 
 .profile-bio { 
@@ -73,6 +78,7 @@
   font-size: 13px; 
   color: var(--brown-m); 
   line-height: 1.55; 
+  transition: color 0.7s ease; 
 }
 
 /* Settings Section */
@@ -85,6 +91,7 @@
   color: var(--outline); 
   margin-bottom: 10px; 
   margin-top: 4px; 
+  transition: color 0.7s ease; 
 }
 
 .settings-list { 
@@ -95,12 +102,13 @@
 }
 
 .settings-row { 
-  background: white; 
+  background: var(--settings-row-bg, white); 
   border-radius: 14px; 
   padding: 14px 16px; 
   display: flex; 
   align-items: center; 
   gap: 14px; 
+  transition: background-color 0.7s ease, color 0.7s ease; 
 }
 
 .settings-icon { 
@@ -122,6 +130,7 @@
   font-size: 15px; 
   font-weight: 700; 
   color: var(--brown); 
+  transition: color 0.7s ease; 
 }
 
 .settings-row-sub { 
@@ -129,6 +138,7 @@
   font-size: 12px; 
   color: var(--brown-m); 
   margin-top: 1px; 
+  transition: color 0.7s ease; 
 }
 
 /* Navigation rows */
@@ -140,7 +150,7 @@
   align-items: center; 
   gap: 14px; 
   cursor: pointer; 
-  transition: background 0.15s; 
+  transition: background 0.7s ease, color 0.7s ease; 
 }
 
 .nav-row:hover { 
@@ -155,6 +165,7 @@
   justify-content: center; 
   flex-shrink: 0; 
   color: var(--orange); 
+  transition: color 0.7s ease; 
 }
 
 .nav-row-title { 
@@ -163,6 +174,7 @@
   font-size: 17px; 
   color: var(--brown); 
   flex: 1; 
+  transition: color 0.7s ease; 
 }
 
 .nav-row-danger .nav-row-title { 
@@ -187,4 +199,5 @@
   text-transform: uppercase; 
   color: var(--outline); 
   padding: 20px 0 10px; 
+  transition: color 0.7s ease; 
 }

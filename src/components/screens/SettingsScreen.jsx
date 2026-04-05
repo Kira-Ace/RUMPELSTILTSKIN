@@ -3,14 +3,13 @@ import { BookOpen, Shield, Send, LogOut, Bell, Moon, Volume2, Edit3, ChevronRigh
 import TopBar from '../common/TopBar.jsx';
 import Toggle from '../common/Toggle.jsx';
 
-export default function SettingsScreen() {
+export default function SettingsScreen({ darkMode, setDarkMode }) {
   const [notifs,setNotifs] = useState(true);
-  const [dark,setDark]     = useState(false);
   const [sounds,setSounds] = useState(true);
 
   const prefs = [
     { label:"Notifications", sub:"Scholarly alerts and reminders",       Icon:Bell,    val:notifs, set:setNotifs, bg:"#fff1e9", color:"var(--orange-m)" },
-    { label:"Dark Mode",     sub:"Midnight study session aesthetics",     Icon:Moon,    val:dark,   set:setDark,   bg:"#fff1e9", color:"var(--orange-m)" },
+    { label:"Dark Mode",     sub:"Midnight study session aesthetics",     Icon:Moon,    val:darkMode, set:setDarkMode, bg:"#fff1e9", color:"var(--orange-m)" },
     { label:"Sound Effects", sub:"Tactile quill and parchment cues",      Icon:Volume2, val:sounds, set:setSounds, bg:"#fff1e9", color:"var(--orange-m)" },
   ];
 
