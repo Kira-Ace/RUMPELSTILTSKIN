@@ -386,15 +386,19 @@ input[type="number"] {
   background: #4892f4;
 }
 
-.login-social-btn.apple {
-  background: var(--brown);
+.login-social-btn.discord {
+  background: #5865F2;
   color: white;
 }
 
-.login-social-btn.apple:hover {
-  background: #1a0f06;
+.login-social-btn.discord:hover {
+  background: #4752C4;
   transform: translateY(-2px);
-  box-shadow: 0 6px 0px rgba(38, 20, 20, 0.3);
+  box-shadow: 0 6px 0px rgba(88, 101, 242, 0.3);
+}
+
+.login-social-btn.discord img {
+  filter: brightness(0) invert(1);
 }
 
 .login-social-btn svg {
@@ -403,6 +407,13 @@ input[type="number"] {
   flex-shrink: 0;
   fill: currentColor;
   stroke: currentColor;
+}
+112c0a4007a83c6a24a681a1d1078fe2
+.login-social-btn img {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 
 .login-subtitle {
@@ -439,48 +450,98 @@ input[type="number"] {
 /* ===== SIGNUP STEP-BY-STEP ===== */
 
 .login-screen.signup-step {
-  padding: 20px 24px 40px 24px;
+  padding: 0;
   justify-content: flex-start;
   overflow-y: auto;
 }
 
-.signup-close {
-  align-self: flex-start;
+.signup-nav-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid #f0f0f0;
+  gap: 16px;
+}
+
+.signup-nav-btn {
   background: none;
   border: none;
   color: var(--brown-m);
   cursor: pointer;
-  padding: 8px 12px;
-  margin-bottom: 16px;
+  padding: 8px;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
+  font-size: 24px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
-.signup-close:hover {
+.signup-nav-btn:hover {
   color: var(--orange-m);
   background: rgba(244, 123, 32, 0.08);
 }
 
-.signup-progress-container {
-  width: 100%;
-  margin-bottom: 40px;
+.signup-progress-dashes {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
 }
 
-.signup-progress-bar {
-  width: 100%;
-  height: 8px;
-  background: #e8e8e8;
-  border-radius: 4px;
-  overflow: hidden;
+.progress-dash {
+  height: 4px;
+  background: #d0d0d0;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  width: 12px;
 }
 
-.signup-progress-fill {
-  height: 100%;
-  background: var(--orange-m);
-  transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+.progress-dash.completed {
+  background: var(--brown);
+  width: 12px;
+}
+
+.progress-dash.active {
+  background: var(--brown);
+  width: 28px;
+}
+
+@keyframes slideInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  25% {
+    opacity: 0.3;
+  }
+  60% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutLeft {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  40% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
 }
 
 .login-container.signup-step-container {
@@ -489,6 +550,10 @@ input[type="number"] {
   align-items: center;
   justify-content: flex-start;
   flex: 1;
+  padding: 40px 24px;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
 }
 
 .signup-step-title {
@@ -500,6 +565,14 @@ input[type="number"] {
   text-align: center;
   width: 100%;
   line-height: 1.3;
+}
+
+.signup-step-title.slide-in {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+.signup-step-title.slide-out {
+  animation: slideOutLeft 0.3s ease-out;
 }
 
 .signup-step-form {

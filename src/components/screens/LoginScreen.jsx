@@ -4,8 +4,9 @@ import rumpelIcon from '../assets/rumpel.png';
 import rumpelText from '../assets/rumpeltext.png';
 import googleLogo from '../assets/google.svg';
 import facebookLogo from '../assets/facebook.svg';
-import appleLogo from '../assets/apple.svg';
+import discordLogo from '../assets/discord.svg';
 import '../../styles/login.css';
+import { supabase } from '../../utils/supabaseClient';
 
 const playButtonSound = () => {
   const audio = new Audio('/RUMPELSTILTSKIN/assets/button.mp3');
@@ -16,6 +17,7 @@ const playButtonSound = () => {
 export default function LoginScreen({ onLogin }) {
   const [mode, setMode] = useState(null); // null, 'signup', or 'login'
   const [step, setStep] = useState(0); // 0: age, 1: name, 2: email, 3: password
+  const [previousStep, setPreviousStep] = useState(null); // for animation
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,6 +25,7 @@ export default function LoginScreen({ onLogin }) {
   const [age, setAge] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
+  const [isStepTransitioning, setIsStepTransitioning] = useState(false);
 
   const welcomePhrases = [
     'Welcome Back',
@@ -46,7 +49,10 @@ export default function LoginScreen({ onLogin }) {
 
   const handleNext = () => {
     if (step < 3) {
+      setIsStepTransitioning(true);
+      setPreviousStep(step);
       setStep(step + 1);
+      setTimeout(() => setIsStepTransitioning(false), 300);
     } else {
       onLogin();
     }
@@ -70,6 +76,31 @@ export default function LoginScreen({ onLogin }) {
     return true;
   };
 
+  // OAuth handlers
+  const handleOAuthLogin = async (provider) => {
+    try {
+      playButtonSound();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        console.error(`${provider} login error:`, error);
+        alert(`${provider} login failed. Please try again.`);
+      }
+    } catch (err) {
+      console.error('OAuth error:', err);
+      alert('An error occurred during login. Please try again.');
+    }
+  };
+
+  const handleGoogleLogin = () => handleOAuthLogin('google');
+  const handleFacebookLogin = () => handleOAuthLogin('facebook');
+  const handleDiscordLogin = () => handleOAuthLogin('discord');
+
   // Initial login choice screen
   if (!mode) {
     return (
@@ -89,12 +120,8 @@ export default function LoginScreen({ onLogin }) {
             className="login-btn primary"
             onClick={() => {
               playButtonSound();
-              setIsTransitioning(true);
-              setTimeout(() => {
-                setMode('signup');
-                setStep(0);
-                setIsTransitioning(false);
-              }, 1000);
+              setMode('signup');
+              setStep(0);
             }}
             disabled={isTransitioning}
           >
@@ -211,17 +238,17 @@ export default function LoginScreen({ onLogin }) {
           <div className="login-divider">OR</div>
 
           {/* Social Login Buttons */}
-          <button className="login-social-btn google" onClick={playButtonSound}>
+          <button className="login-social-btn google" onClick={handleGoogleLogin}>
             <img src={googleLogo} alt="Google" width="20" height="20" />
             <span>Continue with Google</span>
           </button>
-          <button className="login-social-btn facebook" onClick={playButtonSound}>
+          <button className="login-social-btn facebook" onClick={handleFacebookLogin}>
             <img src={facebookLogo} alt="Facebook" width="20" height="20" />
             <span>Continue with Facebook</span>
           </button>
-          <button className="login-social-btn apple" onClick={playButtonSound}>
-            <img src={appleLogo} alt="Apple" width="20" height="20" />
-            <span>Continue with Apple</span>
+          <button className="login-social-btn discord" onClick={handleDiscordLogin}>
+            <img src={discordLogo} alt="Discord" width="20" height="20" />
+            <span>Continue with Discord</span>
           </button>
 
           {/* Terms & Privacy */}
@@ -251,23 +278,70 @@ export default function LoginScreen({ onLogin }) {
 
   return (
     <div className="login-screen signup-step">
-      <button className="signup-close" onClick={() => {
-        playButtonSound();
-        setMode(null);
-      }}>
-        <X size={24} />
-      </button>
-
-      {/* Progress bar */}
-      <div className="signup-progress-container">
-        <div className="signup-progress-bar">
-          <div className="signup-progress-fill" style={{ width: `${((step + 1) / 4) * 100}%` }} />
+      {/* Navigation Header with Progress Dashes */}
+      <div className="signup-nav-header">
+        <button className="signup-nav-btn" onClick={() => {
+          playButtonSound();
+          if (step > 0) {
+            setIsStepTransitioning(true);
+            setPreviousStep(step);
+            setStep(step - 1);
+            setTimeout(() => setIsStepTransitioning(false), 300);
+          } else {
+            setMode(null);
+          }
+        }}>
+          ‹
+        </button>
+        
+        {/* Progress Dashes */}
+        <div className="signup-progress-dashes">
+          {[0, 1, 2, 3].map((i) => (
+            <div 
+              key={i} 
+              className={`progress-dash ${i === step ? 'active' : i < step ? 'completed' : ''}`}
+            ></div>
+          ))}
         </div>
+        
+        <button className="signup-nav-btn" onClick={() => {
+          playButtonSound();
+          setMode(null);
+        }}>
+          <X size={24} />
+        </button>
       </div>
 
       <div className="login-container signup-step-container">
-        {/* Question */}
-        <h1 className="signup-step-title">{stepQuestions[currentStep]}</h1>
+        {/* Question - ALWAYS use wrapper to prevent layout shift */}
+        <div style={{ position: 'relative', width: '100%', overflow: 'hidden', height: '85px', margin: '0 0 40px 0' }}>
+          <h1 
+            className={`signup-step-title ${isStepTransitioning && previousStep !== null ? 'slide-out' : ''}`}
+            style={{ 
+              margin: 0, 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              right: 0
+            }}
+          >
+            {isStepTransitioning && previousStep !== null ? stepQuestions[steps[previousStep]] : stepQuestions[currentStep]}
+          </h1>
+          {isStepTransitioning && previousStep !== null && (
+            <h1 
+              className="signup-step-title slide-in"
+              style={{ 
+                margin: 0, 
+                position: 'absolute', 
+                top: 0, 
+                left: 0, 
+                right: 0
+              }}
+            >
+              {stepQuestions[currentStep]}
+            </h1>
+          )}
+        </div>
 
         {/* Input */}
         <div className="signup-step-form">
@@ -321,17 +395,17 @@ export default function LoginScreen({ onLogin }) {
 
         {/* Social Login Buttons */}
         <div className="signup-step-social">
-          <button className="login-social-btn google" onClick={playButtonSound}>
+          <button className="login-social-btn google" onClick={handleGoogleLogin}>
             <img src={googleLogo} alt="Google" width="20" height="20" />
             <span>Continue with Google</span>
           </button>
-          <button className="login-social-btn facebook" onClick={playButtonSound}>
+          <button className="login-social-btn facebook" onClick={handleFacebookLogin}>
             <img src={facebookLogo} alt="Facebook" width="20" height="20" />
             <span>Continue with Facebook</span>
           </button>
-          <button className="login-social-btn apple" onClick={playButtonSound}>
-            <img src={appleLogo} alt="Apple" width="20" height="20" />
-            <span>Continue with Apple</span>
+          <button className="login-social-btn discord" onClick={handleDiscordLogin}>
+            <img src={discordLogo} alt="Discord" width="20" height="20" />
+            <span>Continue with Discord</span>
           </button>
         </div>
 
