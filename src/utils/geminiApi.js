@@ -2,6 +2,9 @@
  * Gemini API utility functions
  * Centralized API calls for chat and file processing
  * With automatic fallback to alternative models
+ * 
+ * TEMPLATE: Create a .env.local file in the root with:
+ * VITE_GOOGLE_API_KEY={{YOUR_GOOGLE_GENERATIVE_AI_API_KEY}}
  */
 
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;

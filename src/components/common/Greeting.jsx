@@ -2,12 +2,13 @@ import { useMemo } from 'react';
 
 /**
  * Greeting module for displaying rotating greetings.
- * Easy for developers to add more variations by updating the GREETINGS array.
+ * TEMPLATE: Easy for developers to add more variations by updating the GREETINGS array.
  */
 const GREETINGS = [
   "What's kirking,",
   "Ready to learn,",
   "Time to grow,",
+  // {{ADD_MORE_GREETINGS_HERE}}
 ];
 
 export default function Greeting({ userName = "Rumpel" }) {

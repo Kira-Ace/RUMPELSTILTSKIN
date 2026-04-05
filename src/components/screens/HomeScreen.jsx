@@ -17,7 +17,8 @@ export default function HomeScreen({ tasks }) {
       <FocusTimer isOpen={showTimer} onClose={() => setShowTimer(false)} />
       <div className="scroll-content">
         <div className="home-wrap">
-          <Greeting userName="Rumpel" />
+          {/* TEMPLATE: Replace with your app's greeting/user data */}
+          <Greeting userName="My App" />
 
           {/* Today's Focus card */}
           <div className="focus-card">
@@ -44,7 +45,7 @@ export default function HomeScreen({ tasks }) {
             <button className="focus-cta" onClick={() => setShowTimer(true)}><Timer size={16}/> Start Focus Timer</button>
           </div>
 
-          {/* Stats */}
+          {/* Stats - TEMPLATE: Replace with dynamic calculations or hardcoded values */}
           <div className="stats-row">
             <div className="progress-card">
               <div className="progress-label">Weekly Progress</div>
@@ -65,7 +66,7 @@ export default function HomeScreen({ tasks }) {
             </div>
           </div>
 
-          {/* Quote */}
+          {/* Quote - TEMPLATE: Add your own motivational quotes below */}
           <div className="quote-section">
             <p className="quote-text">"The capacity to learn is a gift; the ability to learn is a skill; the willingness to learn is a choice."</p>
             <p className="quote-attr">— Brian Herbert</p>

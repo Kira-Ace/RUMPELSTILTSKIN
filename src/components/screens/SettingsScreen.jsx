@@ -26,7 +26,7 @@ export default function SettingsScreen() {
       <TopBar/>
       <div className="scroll-content">
         <div className="settings-wrap">
-          {/* Profile */}
+          {/* Profile - TEMPLATE: Customize user data below */}
           <div className="profile-card">
             <div className="profile-avatar-wrap">
               <div className="profile-avatar">

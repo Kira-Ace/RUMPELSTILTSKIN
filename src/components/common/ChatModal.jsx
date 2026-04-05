@@ -6,16 +6,21 @@ import "../../styles/chatmodal.css";
 
 /**
  * Chat Modal component for talking to Rumpel AI.
+ * TEMPLATE: Customize AI personality and system prompts in callGeminiChat()
  * Full-screen modal that manages conversation history with Gemini API.
  */
 export default function ChatModal({ isOpen, onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      setTimeout(() => {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }, 0);
+    }
   };
 
   useEffect(() => {
@@ -68,7 +73,7 @@ export default function ChatModal({ isOpen, onClose }) {
         </div>
 
         {/* Messages */}
-        <div className="chat-modal-messages">
+        <div className="chat-modal-messages" ref={messagesContainerRef}>
           {messages.length === 0 && (
             <div className="chat-modal-empty">
               <img src={rumpelIcon} alt="Rumpel" className="chat-modal-welcome-icon" />
@@ -96,8 +101,6 @@ export default function ChatModal({ isOpen, onClose }) {
               </div>
             </div>
           )}
-
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}

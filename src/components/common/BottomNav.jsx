@@ -1,16 +1,15 @@
 import React, { useState } from "react";
-import { Home, CalendarDays, BookMarked, Settings } from "lucide-react";
+import { Home, CalendarDays, Settings } from "lucide-react";
 import rumpelIcon from "../assets/rumpel.png";
 
 /**
  * Bottom Navigation component for the Rumpel app.
  * Features a pill-shaped nav container and interactive Rumpel FAB.
  */
-export default function BottomNav({ active, setActive, bgPlan, setChatModalOpen }) {
+export default function BottomNav({ active, setActive, setChatModalOpen }) {
   const tabs = [
     { id: "home", Icon: Home },
     { id: "calendar", Icon: CalendarDays },
-    { id: "planner", Icon: BookMarked },
     { id: "settings", Icon: Settings },
   ];
 
