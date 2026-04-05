@@ -222,9 +222,6 @@ export default function CalendarScreen({ tasks, setTasks }) {
             <span className="sel-day-name">{dowName(sel)}</span>
           </div>
           <div className="sel-date-right">
-            {isToday
-              ? <span className="sel-today-badge">Today {selTasks.length} tasks</span>
-              : <span className="sel-today-badge" style={{background:"var(--surface-hi)"}}>{MONTHS[sel.m].slice(0,3)} {sel.d}</span>}
           </div>
         </div>
 
