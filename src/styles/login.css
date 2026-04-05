@@ -75,13 +75,14 @@
 }
 
 .login-form-title {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 32px;
+  font-family: 'Newsreader', serif;
+  font-size: 48px;
   font-weight: 700;
   color: var(--brown);
-  margin: 0 0 12px 0;
+  margin: 0 0 36px 0;
   text-align: center;
   width: 100%;
+  letter-spacing: -0.5px;
 }
 
 .login-form-title.rotating-text {

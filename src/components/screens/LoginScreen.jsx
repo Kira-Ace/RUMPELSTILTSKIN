@@ -143,7 +143,6 @@ export default function LoginScreen({ onLogin }) {
           <h1 className="login-form-title rotating-text" key={phraseIndex}>
             {welcomePhrases[phraseIndex]}
           </h1>
-          <p className="login-form-subtitle">Enter your details to continue</p>
 
           {/* Form */}
           <div className="login-form">
