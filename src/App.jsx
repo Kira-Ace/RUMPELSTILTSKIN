@@ -9,6 +9,7 @@ import HomeScreen from './components/screens/HomeScreen.jsx';
 import CalendarScreen from './components/screens/CalendarScreen.jsx';
 import SettingsScreen from './components/screens/SettingsScreen.jsx';
 import { initialTasks, TODAY } from './utils/constants.js';
+import { useDarkMode } from './hooks/useDarkMode.js';
 
 export default function App() {
   const [done, setDone] = useState(false);
@@ -16,11 +17,12 @@ export default function App() {
   const [tab, setTab] = useState("home");
   const [tasks, setTasks] = useState(initialTasks);
   const [chatModalOpen, setChatModalOpen] = useState(false);
+  const [darkMode, setDarkMode] = useDarkMode();
 
   return (
     <>
       <div style={{display:"flex", justifyContent:"center", alignItems:"center", minHeight:"100vh", background:"#111"}}>
-        <div className="phone">
+        <div className={`phone ${darkMode ? 'dark-mode' : ''}`}>
           {!done ? (
             <SplashScreen onDone={() => setDone(true)}/>
           ) : !loggedIn ? (
@@ -34,7 +36,7 @@ export default function App() {
                 <CalendarScreen tasks={tasks} setTasks={setTasks}/>
               </div>
               <div className={`screen ${tab === "settings" ? "" : "hidden"}`}>
-                <SettingsScreen/>
+                <SettingsScreen darkMode={darkMode} setDarkMode={setDarkMode}/>
               </div>
               <BottomNav active={tab} setActive={setTab} setChatModalOpen={setChatModalOpen}/>
               <ChatModal isOpen={chatModalOpen} onClose={() => setChatModalOpen(false)}/>

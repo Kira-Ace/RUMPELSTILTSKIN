@@ -10,6 +10,7 @@ html {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  transition: background-color 0.7s ease, color 0.7s ease, border-color 0.7s ease;
 }
 
 body { 
@@ -22,6 +23,7 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  transition: background-color 0.7s ease;
 }
 
 :root {
@@ -40,4 +42,27 @@ body {
   --brown-m:     #574237;
   --outline:     #8b7265;
   --outline-v:   #dec1b1;
+  --settings-row-bg: #ffffff;
+  --text-muted:  rgba(87, 66, 55, 0.4);
+}
+
+/* Dark Mode Color Scheme */
+:root.dark-mode {
+  --bg:          #1a1410;
+  --bg-dim:      #2a2218;
+  --bg-low:      #241d18;
+  --surface:     #2f271f;
+  --surface-hi:  #353029;
+  --surface-hhi: #3a3531;
+  --orange:      #ff9244;
+  --orange-m:    #ffaa66;
+  --orange-l:    #ffb876;
+  --yellow:      #f0c947;
+  --yellow-d:    #c9a83f;
+  --brown:       #e8d9cc;
+  --brown-m:     #d4c4b8;
+  --outline:     #9d8f81;
+  --outline-v:   #5a4f47;
+  --settings-row-bg: #2f271f;
+  --text-muted:  rgba(232, 217, 204, 0.35);
 }
