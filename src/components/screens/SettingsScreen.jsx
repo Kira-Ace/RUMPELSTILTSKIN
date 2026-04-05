@@ -34,9 +34,9 @@ export default function SettingsScreen() {
               </div>
               <div className="profile-edit-btn"><Edit3 size={11} color="white"/></div>
             </div>
-            <div className="profile-name">Julian Vane</div>
-            <div className="profile-role">Senior Researcher · Polymath Level 4</div>
-            <div className="profile-bio">Dedicated to the pursuit of knowledge and the organization of the mind's library.</div>
+            <div className="profile-name">My App</div>
+            <div className="profile-role">User · Level 1</div>
+            <div className="profile-bio">Welcome to your personal study companion.</div>
           </div>
 
           {/* General Preferences */}

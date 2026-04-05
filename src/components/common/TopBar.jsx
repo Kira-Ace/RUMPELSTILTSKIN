@@ -9,10 +9,6 @@ export default function TopBar({ extra }) {
       </div>
       <div className="topbar-right">
         {extra}
-        <div className="topbar-avatar">
-          {/* TEMPLATE: Replace with user avatar or initials */}
-          <span style={{fontSize:16,color:"var(--brown-m)"}}>!</span>
-        </div>
       </div>
     </div>
   );
