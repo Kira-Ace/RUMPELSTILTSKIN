@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Noto+Serif:wght@400;600;700&family=Work+Sans:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+}
+
+html {
+  margin: 0;
+  padding: 0;
+}
+
+body { 
+  background: #111; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  min-height: 100vh; 
+  font-family: 'Noto Serif', serif;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:          #fff8f5;
+  --bg-dim:      #ffeadd;
+  --bg-low:      #fff1e9;
+  --surface:     #ffdbc8;
+  --surface-hi:  #ffe3d1;
+  --surface-hhi: #fcddc9;
+  --orange:      #994700;
+  --orange-m:    #f47b20;
+  --orange-l:    #ffb68b;
+  --yellow:      #fdcf49;
+  --yellow-d:    #755b00;
+  --brown:       #28180c;
+  --brown-m:     #574237;
+  --outline:     #8b7265;
+  --outline-v:   #dec1b1;
+}

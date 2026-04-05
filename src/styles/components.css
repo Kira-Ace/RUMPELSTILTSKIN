@@ -1,0 +1,44 @@
+/* Toggle Switch */
+.toggle { 
+  width: 48px; 
+  height: 28px; 
+  border-radius: 14px; 
+  position: relative; 
+  cursor: pointer; 
+  flex-shrink: 0; 
+  transition: background 0.25s; 
+}
+
+.toggle.on { 
+  background: var(--yellow); 
+}
+
+.toggle.off { 
+  background: var(--surface-hhi); 
+}
+
+.toggle-knob { 
+  position: absolute; 
+  top: 3px; 
+  width: 22px; 
+  height: 22px; 
+  border-radius: 50%; 
+  background: white; 
+  transition: left 0.25s; 
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+}
+
+.toggle.on .toggle-knob { 
+  left: 23px; 
+}
+
+.toggle.off .toggle-knob { 
+  left: 3px; 
+}
+
+.check-icon { 
+  color: var(--yellow-d); 
+}

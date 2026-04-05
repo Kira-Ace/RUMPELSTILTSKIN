@@ -1,0 +1,38 @@
+.topbar { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  padding: 18px 20px 10px; 
+  flex-shrink: 0; 
+  background: var(--bg); 
+}
+
+.topbar-left { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+}
+
+.topbar-wordmark { 
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 0.5px rgba(60, 30, 20, 0.6));
+}
+
+.topbar-right { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+}
+
+.topbar-avatar { 
+  width: 36px; 
+  height: 36px; 
+  border-radius: 50%; 
+  background: var(--surface-hhi); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  overflow: hidden; 
+  border: 2px solid var(--outline-v); 
+}

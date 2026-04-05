@@ -1,0 +1,361 @@
+.cal-wrap { 
+  padding: 0 20px; 
+  display: flex; 
+  flex-direction: column; 
+  flex: 1; 
+  overflow: hidden; 
+}
+
+.cal-month-row { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  margin-bottom: 6px; 
+  flex-shrink: 0; 
+}
+
+.cal-month-name { 
+  font-family: 'Newsreader', serif; 
+  font-style: italic; 
+  font-size: 52px; 
+  font-weight: 700; 
+  color: var(--brown); 
+  line-height: 1; 
+}
+
+.cal-arrow { 
+  width: 34px; 
+  height: 34px; 
+  border-radius: 50%; 
+  border: none; 
+  background: transparent; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  color: var(--brown-m); 
+  transition: background 0.15s; 
+}
+
+.cal-arrow:hover { 
+  background: var(--bg-dim); 
+  color: var(--orange); 
+}
+
+.day-names-row { 
+  display: grid; 
+  grid-template-columns: repeat(7, 1fr); 
+  margin-bottom: 0; 
+  flex-shrink: 0; 
+}
+
+.day-name { 
+  text-align: center; 
+  font-family: 'Work Sans', sans-serif; 
+  font-size: 11px; 
+  font-weight: 600; 
+  color: var(--outline); 
+  letter-spacing: 0.3px; 
+  line-height: 1; 
+  transition: color 0.2s; 
+}
+
+.day-name.active-col { 
+  font-weight: 700; 
+  color: var(--orange); 
+  font-size: 13px; 
+}
+
+@keyframes calR { 
+  from {
+    opacity: 0;
+    transform: translateX(18px)
+  } 
+  to {
+    opacity: 1;
+    transform: none
+  } 
+}
+
+@keyframes calL { 
+  from {
+    opacity: 0;
+    transform: translateX(-18px)
+  } 
+  to {
+    opacity: 1;
+    transform: none
+  } 
+}
+
+.anim-r { 
+  animation: calR 0.24s ease both; 
+}
+
+.anim-l { 
+  animation: calL 0.24s ease both; 
+}
+
+.day-cell { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 12px; 
+  cursor: pointer; 
+  padding: 0px 0; 
+}
+
+.day-num { 
+  width: 36px; 
+  height: 36px; 
+  border-radius: 50%; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-family: 'Newsreader', serif; 
+  font-size: 16px; 
+  font-weight: 600; 
+  transition: background 0.18s, color 0.18s; 
+}
+
+.day-num.sel { 
+  background: var(--orange-m); 
+  color: white; 
+}
+
+.day-num.today:not(.sel) { 
+  color: var(--orange); 
+  font-weight: 700; 
+}
+
+.day-num.muted { 
+  color: rgba(87, 66, 55, 0.3); 
+}
+
+.day-dots { 
+  display: flex; 
+  gap: 2.5px; 
+  height: 5px; 
+  align-items: center; 
+}
+
+.day-dot { 
+  width: 3.5px; 
+  height: 3.5px; 
+  border-radius: 50%; 
+  background: var(--orange-m); 
+}
+
+.day-dot.sel { 
+  background: rgba(255, 255, 255, 0.7); 
+}
+
+/* Divider pill */
+.cal-divider { 
+  position: relative; 
+  height: 30px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  flex-shrink: 0; 
+  cursor: pointer; 
+  touch-action: none; 
+  user-select: none; 
+}
+
+.cal-divider-line { 
+  position: absolute; 
+  left: 0; 
+  right: 0; 
+  top: 50%; 
+  height: 1.5px; 
+  background: var(--outline-v); 
+  transform: translateY(-50%); 
+}
+
+.cal-pill { 
+  position: relative; 
+  z-index: 2; 
+  background: var(--bg); 
+  border: 1.5px solid var(--outline-v); 
+  border-radius: 20px; 
+  width: 50px; 
+  height: 20px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  transition: transform 0.35s, border-color 0.2s; 
+}
+
+.cal-pill:hover { 
+  border-color: var(--orange-m); 
+}
+
+.cal-pill svg { 
+  color: var(--outline); 
+  width: 12px; 
+  height: 12px; 
+  transition: color 0.2s; 
+}
+
+.cal-pill:hover svg { 
+  color: var(--orange-m); 
+}
+
+/* Date header */
+.sel-date-header { 
+  display: flex; 
+  align-items: flex-end; 
+  justify-content: space-between; 
+  padding: 10px 0 8px; 
+  flex-shrink: 0; 
+}
+
+.sel-date-left { 
+  display: flex; 
+  align-items: baseline; 
+  gap: 8px; 
+}
+
+.sel-day-num { 
+  font-family: 'Newsreader', serif; 
+  font-size: 48px; 
+  font-weight: 700; 
+  color: var(--brown); 
+  line-height: 1; 
+}
+
+.sel-day-name { 
+  font-family: 'Newsreader', serif; 
+  font-style: italic; 
+  font-size: 22px; 
+  color: var(--brown-m); 
+}
+
+.sel-date-right { 
+  text-align: right; 
+}
+
+.sel-today-badge { 
+  background: var(--yellow); 
+  color: var(--brown); 
+  font-family: 'Work Sans', sans-serif; 
+  font-size: 12px; 
+  font-weight: 700; 
+  padding: 4px 12px; 
+  border-radius: 20px; 
+}
+
+.sel-task-count { 
+  font-family: 'Work Sans', sans-serif; 
+  font-size: 11px; 
+  color: var(--outline); 
+  margin-top: 2px; 
+}
+
+/* Task cards */
+.task-card { 
+  background: var(--bg-low); 
+  border-radius: 16px; 
+  padding: 16px 18px; 
+  margin-bottom: 10px; 
+  cursor: pointer; 
+  transition: transform 0.15s, box-shadow 0.15s; 
+  flex-shrink: 0; 
+}
+
+.task-card:hover { 
+  transform: translateY(-1px); 
+  box-shadow: 0 4px 16px rgba(40, 24, 12, 0.08); 
+}
+
+.task-card.accent { 
+  background: var(--yellow); 
+}
+
+.task-time { 
+  font-family: 'Work Sans', sans-serif; 
+  font-size: 13px; 
+  font-weight: 700; 
+  color: var(--orange); 
+  margin-bottom: 4px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+}
+
+.task-title { 
+  font-family: 'Newsreader', serif; 
+  font-size: 18px; 
+  font-weight: 700; 
+  color: var(--brown); 
+  margin-bottom: 4px; 
+}
+
+.task-card.accent .task-title { 
+  color: var(--brown); 
+}
+
+.task-desc { 
+  font-family: 'Noto Serif', serif; 
+  font-size: 13px; 
+  color: var(--brown-m); 
+  line-height: 1.5; 
+}
+
+.task-footer { 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+  margin-top: 8px; 
+}
+
+.task-tag-badge { 
+  font-family: 'Work Sans', sans-serif; 
+  font-size: 10px; 
+  font-weight: 700; 
+  padding: 3px 9px; 
+  border-radius: 20px; 
+  background: rgba(153, 71, 0, 0.12); 
+  color: var(--orange); 
+}
+
+.task-card.accent .task-tag-badge { 
+  background: rgba(0, 0, 0, 0.1); 
+  color: var(--brown); 
+}
+
+.add-task-btn { 
+  border: 1.5px dashed var(--outline-v); 
+  border-radius: 16px; 
+  padding: 14px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 8px; 
+  cursor: pointer; 
+  color: var(--outline); 
+  font-family: 'Work Sans', sans-serif; 
+  font-size: 14px; 
+  font-weight: 600; 
+  background: transparent; 
+  transition: border-color 0.2s, color 0.2s; 
+  flex-shrink: 0; 
+  margin-bottom: 10px; 
+  width: 100%; 
+}
+
+.add-task-btn:hover { 
+  border-color: var(--orange-m); 
+  color: var(--orange-m); 
+}
+
+.tasks-scroll { 
+  flex: 1; 
+  overflow-y: auto; 
+  padding-bottom: 80px; 
+}
+
+.tasks-scroll::-webkit-scrollbar { 
+  display: none; 
+}

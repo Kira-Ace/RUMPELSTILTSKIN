@@ -1,0 +1,12 @@
+/* Main CSS imports - organize all styles here */
+@import './global.css';
+@import './phone.css';
+@import './splash.css';
+@import './topbar.css';
+@import './home.css';
+@import './calendar.css';
+@import './planner.css';
+@import './settings.css';
+@import './bottomnav.css';
+@import './modal.css';
+@import './components.css';

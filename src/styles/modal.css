@@ -1,0 +1,94 @@
+.modal-overlay { 
+  position: absolute; 
+  inset: 0; 
+  background: rgba(40, 24, 12, 0.45); 
+  z-index: 50; 
+  display: flex; 
+  align-items: flex-end; 
+  animation: fadeIn 0.2s ease; 
+}
+
+@keyframes fadeIn { 
+  from{opacity: 0} 
+  to{opacity: 1} 
+}
+
+.modal-sheet { 
+  background: var(--bg); 
+  border-radius: 26px 26px 0 0; 
+  padding: 22px 20px 34px; 
+  width: 100%; 
+  animation: sheetUp 0.3s ease; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px; 
+}
+
+@keyframes sheetUp { 
+  from{transform: translateY(100%)} 
+  to{transform: none} 
+}
+
+.modal-handle { 
+  width: 36px; 
+  height: 4px; 
+  background: var(--outline-v); 
+  border-radius: 2px; 
+  align-self: center; 
+  margin-bottom: 2px; 
+}
+
+.modal-title { 
+  font-family: 'Newsreader', serif; 
+  font-style: italic; 
+  font-size: 20px; 
+  font-weight: 700; 
+  color: var(--brown); 
+}
+
+.modal-input { 
+  border: 1.5px solid var(--outline-v); 
+  border-radius: 12px; 
+  padding: 11px 14px; 
+  font-size: 14px; 
+  font-family: 'Noto Serif', serif; 
+  color: var(--brown); 
+  background: white; 
+  outline: none; 
+  width: 100%; 
+}
+
+.modal-input:focus { 
+  border-color: var(--orange-m); 
+}
+
+.modal-btns { 
+  display: flex; 
+  gap: 10px; 
+}
+
+.modal-btn { 
+  flex: 1; 
+  padding: 12px; 
+  border-radius: 12px; 
+  font-family: 'Work Sans', sans-serif; 
+  font-size: 14px; 
+  font-weight: 700; 
+  cursor: pointer; 
+  border: none; 
+  transition: transform 0.12s; 
+}
+
+.modal-btn:hover { 
+  transform: scale(0.98); 
+}
+
+.modal-btn.primary { 
+  background: var(--orange); 
+  color: white; 
+}
+
+.modal-btn.secondary { 
+  background: var(--surface-hi); 
+  color: var(--brown); 
+}

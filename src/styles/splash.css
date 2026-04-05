@@ -1,0 +1,56 @@
+.splash { 
+  background: var(--orange-m); 
+  justify-content: center; 
+  align-items: center; 
+}
+
+.splash-inner { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 32px; 
+  animation: sIn 0.7s ease both; 
+}
+
+@keyframes sIn { 
+  from { 
+    opacity: 0; 
+    transform: scale(.88) translateY(16px); 
+  } 
+  to { 
+    opacity: 1; 
+    transform: none; 
+  } 
+}
+
+.splash-logo { 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  filter: drop-shadow(0 8px 0.5px rgba(0, 0, 0, 0.35));
+}
+
+.splash-logo img {
+  mix-blend-mode: multiply;
+}
+
+.splash-excl { 
+  font-family: 'Newsreader', serif; 
+  font-size: 52px; 
+  font-weight: 700; 
+  color: var(--orange-m); 
+  line-height: 1; 
+}
+
+.splash-name { 
+  font-family: 'Newsreader', serif; 
+  font-style: italic; 
+  font-size: 48px; 
+  font-weight: 700; 
+  color: var(--bg);
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.25));
+  background: linear-gradient(to bottom, #fff8f5 0%, #ffeadd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
