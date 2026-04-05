@@ -7,6 +7,12 @@ import facebookLogo from '../assets/facebook.svg';
 import appleLogo from '../assets/apple.svg';
 import '../../styles/login.css';
 
+const playButtonSound = () => {
+  const audio = new Audio('/RUMPELSTILTSKIN/assets/button.mp3');
+  audio.volume = 0.3;
+  audio.play().catch(() => {});
+};
+
 export default function LoginScreen({ onLogin }) {
   const [mode, setMode] = useState(null); // null, 'signup', or 'login'
   const [step, setStep] = useState(0); // 0: age, 1: name, 2: email, 3: password
@@ -16,7 +22,6 @@ export default function LoginScreen({ onLogin }) {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
 
   const welcomePhrases = [
@@ -43,10 +48,7 @@ export default function LoginScreen({ onLogin }) {
     if (step < 3) {
       setStep(step + 1);
     } else {
-      setShowCelebration(true);
-      setTimeout(() => {
-        onLogin();
-      }, 2500);
+      onLogin();
     }
   };
 
@@ -86,6 +88,7 @@ export default function LoginScreen({ onLogin }) {
           <button
             className="login-btn primary"
             onClick={() => {
+              playButtonSound();
               setIsTransitioning(true);
               setTimeout(() => {
                 setMode('signup');
@@ -101,6 +104,7 @@ export default function LoginScreen({ onLogin }) {
           <button
             className="login-btn secondary"
             onClick={() => {
+              playButtonSound();
               setIsTransitioning(true);
               setTimeout(() => {
                 setMode('login');
@@ -115,6 +119,7 @@ export default function LoginScreen({ onLogin }) {
           <button
             className="login-btn tertiary"
             onClick={() => {
+              playButtonSound();
               setIsTransitioning(true);
               setTimeout(() => {
                 onLogin();
@@ -135,7 +140,10 @@ export default function LoginScreen({ onLogin }) {
       <div className="login-screen">
         <div className="login-container">
           {/* Back button */}
-          <button className="login-back" onClick={() => setMode(null)}>
+          <button className="login-back" onClick={() => {
+            playButtonSound();
+            setMode(null);
+          }}>
             <X size={24} />
           </button>
 
@@ -170,7 +178,10 @@ export default function LoginScreen({ onLogin }) {
                 />
                 <button
                   className="login-password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => {
+                    playButtonSound();
+                    setShowPassword(!showPassword);
+                  }}
                   type="button"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -182,14 +193,17 @@ export default function LoginScreen({ onLogin }) {
           {/* Submit Button */}
           <button
             className="login-btn primary"
-            onClick={handleSubmit}
+            onClick={() => {
+              playButtonSound();
+              handleSubmit();
+            }}
             disabled={!email.trim() || !password.trim()}
           >
             SIGN IN
           </button>
 
           {/* Forgot Password Link */}
-          <button className="login-forgot-btn">
+          <button className="login-forgot-btn" onClick={playButtonSound}>
             FORGOT PASSWORD?
           </button>
 
@@ -197,15 +211,15 @@ export default function LoginScreen({ onLogin }) {
           <div className="login-divider">OR</div>
 
           {/* Social Login Buttons */}
-          <button className="login-social-btn google">
+          <button className="login-social-btn google" onClick={playButtonSound}>
             <img src={googleLogo} alt="Google" width="20" height="20" />
             <span>Continue with Google</span>
           </button>
-          <button className="login-social-btn facebook">
+          <button className="login-social-btn facebook" onClick={playButtonSound}>
             <img src={facebookLogo} alt="Facebook" width="20" height="20" />
             <span>Continue with Facebook</span>
           </button>
-          <button className="login-social-btn apple">
+          <button className="login-social-btn apple" onClick={playButtonSound}>
             <img src={appleLogo} alt="Apple" width="20" height="20" />
             <span>Continue with Apple</span>
           </button>
@@ -237,7 +251,10 @@ export default function LoginScreen({ onLogin }) {
 
   return (
     <div className="login-screen signup-step">
-      <button className="signup-close" onClick={() => setMode(null)}>
+      <button className="signup-close" onClick={() => {
+        playButtonSound();
+        setMode(null);
+      }}>
         <X size={24} />
       </button>
 
@@ -276,7 +293,10 @@ export default function LoginScreen({ onLogin }) {
           {currentStep === 'password' && (
             <button
               className="login-password-toggle"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => {
+                playButtonSound();
+                setShowPassword(!showPassword);
+              }}
               type="button"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -287,7 +307,10 @@ export default function LoginScreen({ onLogin }) {
         {/* Next button */}
         <button
           className="login-btn primary signup-step-btn"
-          onClick={handleNext}
+          onClick={() => {
+            playButtonSound();
+            handleNext();
+          }}
           disabled={isNextDisabled()}
         >
           NEXT
@@ -298,15 +321,15 @@ export default function LoginScreen({ onLogin }) {
 
         {/* Social Login Buttons */}
         <div className="signup-step-social">
-          <button className="login-social-btn google">
+          <button className="login-social-btn google" onClick={playButtonSound}>
             <img src={googleLogo} alt="Google" width="20" height="20" />
             <span>Continue with Google</span>
           </button>
-          <button className="login-social-btn facebook">
+          <button className="login-social-btn facebook" onClick={playButtonSound}>
             <img src={facebookLogo} alt="Facebook" width="20" height="20" />
             <span>Continue with Facebook</span>
           </button>
-          <button className="login-social-btn apple">
+          <button className="login-social-btn apple" onClick={playButtonSound}>
             <img src={appleLogo} alt="Apple" width="20" height="20" />
             <span>Continue with Apple</span>
           </button>
@@ -318,23 +341,6 @@ export default function LoginScreen({ onLogin }) {
           <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
         </p>
       </div>
-
-      {/* Celebratory Curtain */}
-      {showCelebration && (
-        <div className="celebration-curtain">
-          <div className="curtain curtain-left"></div>
-          <div className="curtain curtain-right"></div>
-          <div className="confetti-container">
-            {[...Array(50)].map((_, i) => (
-              <div key={i} className="confetti" style={{
-                left: Math.random() * 100 + '%',
-                animationDelay: Math.random() * 0.8 + 's',
-                backgroundColor: ['#ea4335', '#4285f4', '#fbbc05', '#34a853', '#f4761d'][Math.floor(Math.random() * 5)]
-              }}></div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
