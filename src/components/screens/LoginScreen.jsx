@@ -4,9 +4,20 @@ import rumpelIcon from '../assets/rumpel.png';
 import rumpelText from '../assets/rumpeltext.png';
 import googleLogo from '../assets/google.svg';
 import facebookLogo from '../assets/facebook.svg';
-import discordLogo from '../assets/discord.svg';
+import microsoftLogo from '../assets/microsoft.svg';
 import '../../styles/login.css';
-import { supabase } from '../../utils/supabaseClient';
+import {
+  auth,
+  googleProvider,
+  facebookProvider,
+  microsoftProvider,
+} from '../../utils/firebaseClient';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  updateProfile,
+} from 'firebase/auth';
 
 const playButtonSound = () => {
   const audio = new Audio('/RUMPELSTILTSKIN/assets/button.mp3');
@@ -26,6 +37,9 @@ export default function LoginScreen({ onLogin }) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [isStepTransitioning, setIsStepTransitioning] = useState(false);
+  const [validationError, setValidationError] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState({ isValid: false, feedback: '' });
+  const [attemptedPasswordSubmit, setAttemptedPasswordSubmit] = useState(false);
 
   const welcomePhrases = [
     'Welcome Back',
@@ -53,53 +67,208 @@ export default function LoginScreen({ onLogin }) {
       setPreviousStep(step);
       setStep(step + 1);
       setTimeout(() => setIsStepTransitioning(false), 300);
+      setAttemptedPasswordSubmit(false); // Reset when moving to next step
     } else {
-      onLogin();
+      // On final step, submit the signup
+      // Check if password is valid before submitting
+      if (!passwordStrength.isValid) {
+        setAttemptedPasswordSubmit(true);
+        return;
+      }
+      handleSignup();
     }
   };
 
-  const handleSubmit = () => {
-    if (mode === 'login') {
-      if (email.trim() && password.trim()) {
+  // Signup handler - create user in Firebase
+  const handleSignup = async () => {
+    try {
+      if (!email.trim() || !password.trim()) {
+        alert('Email and password are required');
+        return;
+      }
+
+      // Create user with Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password.trim()
+      );
+
+      if (userCredential.user) {
+        // Update user profile with name
+        if (name.trim()) {
+          await updateProfile(userCredential.user, {
+            displayName: name.trim(),
+          });
+        }
+        // User created successfully
         onLogin();
       }
-    } else if (mode === 'signup' && step === 3 && password.trim()) {
-      onLogin();
+    } catch (err) {
+      console.error('Signup error:', err);
+      let errorMessage = 'An error occurred during signup. Please try again.';
+      
+      if (err.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already in use.';
+      } else if (err.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please choose a stronger password.';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address.';
+      }
+      
+      alert(errorMessage);
     }
   };
 
   const isNextDisabled = () => {
     if (step === 0) return !age.trim();
     if (step === 1) return false; // name is optional
-    if (step === 2) return !email.trim();
-    if (step === 3) return !password.trim();
+    if (step === 2) {
+      // Email is optional - always allow next
+      return false;
+    }
+    if (step === 3) {
+      // Password is optional - user can use OAuth instead
+      // But if they enter a password, email becomes required
+      if (password.trim() && !email.trim()) return true;
+      return false;
+    }
     return true;
+  };
+
+  // Email validation (optional)
+  const validateEmail = (emailValue) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // If empty, that's OK since email is optional
+    if (!emailValue.trim()) {
+      setValidationError('');
+      return true;
+    }
+    // If provided, must be valid
+    if (!emailRegex.test(emailValue.trim())) {
+      setValidationError('Please enter a valid email address');
+      return false;
+    }
+    setValidationError('');
+    return true;
+  };
+
+  // Password strength validation
+  const validatePassword = (passwordValue) => {
+    // Reset the attempted submit flag when user types
+    setAttemptedPasswordSubmit(false);
+    
+    const feedback = [];
+    let isValid = true;
+
+    if (!passwordValue) {
+      setPasswordStrength({ isValid: false, feedback: '' });
+      return;
+    }
+
+    if (passwordValue.length < 8) {
+      feedback.push('• At least 8 characters');
+      isValid = false;
+    }
+    if (!/[A-Z]/.test(passwordValue)) {
+      feedback.push('• At least one uppercase letter');
+      isValid = false;
+    }
+    if (!/[a-z]/.test(passwordValue)) {
+      feedback.push('• At least one lowercase letter');
+      isValid = false;
+    }
+    if (!/[0-9]/.test(passwordValue)) {
+      feedback.push('• At least one number');
+      isValid = false;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(passwordValue)) {
+      feedback.push('• At least one special character (!@#$%^&*, etc.)');
+      isValid = false;
+    }
+
+    setPasswordStrength({
+      isValid,
+      feedback: feedback.length > 0 ? feedback.join('\n') : '✓ Strong password!',
+    });
+  };
+
+  // Handle login for signing in with email/password
+  const handleSubmit = async () => {
+    try {
+      if (!email.trim() || !password.trim()) {
+        alert('Email and password are required');
+        return;
+      }
+
+      // Sign in with Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password.trim()
+      );
+
+      if (userCredential.user) {
+        // User signed in successfully
+        onLogin();
+      }
+    } catch (err) {
+      console.error('Sign-in error:', err);
+      let errorMessage = 'Sign-in failed. Please try again.';
+      
+      if (err.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email.';
+      } else if (err.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password.';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address.';
+      } else if (err.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been disabled.';
+      }
+      
+      alert(errorMessage);
+    }
   };
 
   // OAuth handlers
   const handleOAuthLogin = async (provider) => {
     try {
       playButtonSound();
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
+      const result = await signInWithPopup(auth, provider);
 
-      if (error) {
-        console.error(`${provider} login error:`, error);
-        alert(`${provider} login failed. Please try again.`);
+      if (result.user) {
+        // Update user profile with the name from signup if provided
+        // (OAuth displayName might be set, but override with our collected name if available)
+        if (name.trim()) {
+          await updateProfile(result.user, {
+            displayName: name.trim(),
+          });
+        }
+        // Store age in localStorage for later use
+        if (age.trim()) {
+          localStorage.setItem(`user_age_${result.user.uid}`, age);
+        }
+        // Profile picture and email are automatically available from OAuth providers
+        onLogin();
       }
     } catch (err) {
       console.error('OAuth error:', err);
-      alert('An error occurred during login. Please try again.');
+      let errorMessage = 'Sign-in failed. Please try again.';
+      
+      if (err.code === 'auth/popup-closed-by-user') {
+        // User closed the popup - don't show error
+        return;
+      } else if (err.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      alert(errorMessage);
     }
   };
 
-  const handleGoogleLogin = () => handleOAuthLogin('google');
-  const handleFacebookLogin = () => handleOAuthLogin('facebook');
-  const handleDiscordLogin = () => handleOAuthLogin('discord');
+  const handleGoogleLogin = () => handleOAuthLogin(googleProvider);
+  const handleFacebookLogin = () => handleOAuthLogin(facebookProvider);
+  const handleMicrosoftLogin = () => handleOAuthLogin(microsoftProvider);
 
   // Initial login choice screen
   if (!mode) {
@@ -113,7 +282,6 @@ export default function LoginScreen({ onLogin }) {
 
           {/* Title */}
           <img src={rumpelText} alt="Rumpel" className="login-title-img" />
-          <p className="login-subtitle">Your personal task manager & AI companion. Get organized and stay focused.</p>
 
           {/* Buttons */}
           <button
@@ -164,44 +332,76 @@ export default function LoginScreen({ onLogin }) {
   // Login form
   if (mode === 'login') {
     return (
-      <div className="login-screen">
-        <div className="login-container">
-          {/* Back button */}
-          <button className="login-back" onClick={() => {
+      <div className="login-screen signup-step">
+        {/* Navigation Header */}
+        <div className="signup-nav-header">
+          <button className="signup-nav-btn" onClick={() => {
+            playButtonSound();
+            setMode(null);
+          }}>
+            ‹
+          </button>
+          
+          <div style={{ flex: 1 }}></div>
+          
+          <button className="signup-nav-btn" onClick={() => {
             playButtonSound();
             setMode(null);
           }}>
             <X size={24} />
           </button>
+        </div>
 
-          {/* Title */}
-          <h1 className="login-form-title rotating-text" key={phraseIndex}>
-            {welcomePhrases[phraseIndex]}
-          </h1>
+        <div className="login-container signup-step-container">
+          {/* Question */}
+          <div style={{ position: 'relative', width: '100%', overflow: 'hidden', height: '85px', margin: '0 0 -24px 0' }}>
+            <h1 
+              className="signup-step-title"
+              style={{ 
+                margin: 0, 
+                position: 'absolute', 
+                top: 0, 
+                left: 0, 
+                right: 0
+              }}
+            >
+              {welcomePhrases[phraseIndex]}
+            </h1>
+          </div>
 
           {/* Form */}
-          <div className="login-form">
-            <div className="form-group">
-              <label className="form-label">Email</label>
+          <div className="signup-step-form">
+            <div>
               <input
                 type="email"
-                className="login-input"
+                className="login-input signup-step-input"
                 placeholder="email@address.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setEmail(value);
+                  validateEmail(value);
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && !(!email.trim() || !password.trim()) && handleSubmit()}
+                autoFocus
               />
+              <div className={`validation-error ${validationError ? 'show' : 'hide'}`}>
+                {validationError || '\u200b'}
+              </div>
             </div>
+          </div>
 
-            <div className="form-group">
-              <label className="form-label">Password</label>
+          {/* Password */}
+          <div className="signup-step-form">
+            <div>
               <div className="login-password-wrapper">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  className="login-input"
-                  placeholder="••••••••"
+                  className="login-input signup-step-input"
+                  placeholder="Your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                  onKeyDown={(e) => e.key === 'Enter' && !(!email.trim() || !password.trim()) && handleSubmit()}
                 />
                 <button
                   className="login-password-toggle"
@@ -219,7 +419,7 @@ export default function LoginScreen({ onLogin }) {
 
           {/* Submit Button */}
           <button
-            className="login-btn primary"
+            className="login-btn primary signup-step-btn"
             onClick={() => {
               playButtonSound();
               handleSubmit();
@@ -234,22 +434,27 @@ export default function LoginScreen({ onLogin }) {
             FORGOT PASSWORD?
           </button>
 
+          {/* Spacer for social buttons at bottom */}
+          <div className="signup-step-spacer" />
+
           {/* Divider */}
-          <div className="login-divider">OR</div>
+          <div className="login-divider signup-divider">OR</div>
 
           {/* Social Login Buttons */}
-          <button className="login-social-btn google" onClick={handleGoogleLogin}>
-            <img src={googleLogo} alt="Google" width="20" height="20" />
-            <span>Continue with Google</span>
-          </button>
-          <button className="login-social-btn facebook" onClick={handleFacebookLogin}>
-            <img src={facebookLogo} alt="Facebook" width="20" height="20" />
-            <span>Continue with Facebook</span>
-          </button>
-          <button className="login-social-btn discord" onClick={handleDiscordLogin}>
-            <img src={discordLogo} alt="Discord" width="20" height="20" />
-            <span>Continue with Discord</span>
-          </button>
+          <div className="signup-step-social">
+            <button className="login-social-btn google" onClick={handleGoogleLogin}>
+              <img src={googleLogo} alt="Google" width="20" height="20" />
+              <span>Continue with Google</span>
+            </button>
+            <button className="login-social-btn facebook" onClick={handleFacebookLogin}>
+              <img src={facebookLogo} alt="Facebook" width="20" height="20" />
+              <span>Continue with Facebook</span>
+            </button>
+            <button className="login-social-btn microsoft" onClick={handleMicrosoftLogin}>
+              <img src={microsoftLogo} alt="Microsoft" width="20" height="20" />
+              <span>Continue with Microsoft</span>
+            </button>
+          </div>
 
           {/* Terms & Privacy */}
           <p className="login-terms">
@@ -264,15 +469,15 @@ export default function LoginScreen({ onLogin }) {
   // Signup step-by-step form
   const stepQuestions = {
     age: 'How old are you?',
-    name: 'What should we call you?',
+    name: 'What do you go by?',
     email: 'What\'s your email?',
     password: 'Create a password'
   };
 
   const stepPlaceholders = {
     age: 'e.g., 25',
-    name: 'Your magical name',
-    email: 'your.email@example.com',
+    name: 'Name goes here',
+    email: 'your.email@example.com (optional)',
     password: 'Make it strong!'
   };
 
@@ -287,6 +492,7 @@ export default function LoginScreen({ onLogin }) {
             setPreviousStep(step);
             setStep(step - 1);
             setTimeout(() => setIsStepTransitioning(false), 300);
+            setAttemptedPasswordSubmit(false); // Reset when going back
           } else {
             setMode(null);
           }
@@ -314,7 +520,7 @@ export default function LoginScreen({ onLogin }) {
 
       <div className="login-container signup-step-container">
         {/* Question - ALWAYS use wrapper to prevent layout shift */}
-        <div style={{ position: 'relative', width: '100%', overflow: 'hidden', height: '85px', margin: '0 0 40px 0' }}>
+        <div style={{ position: 'relative', width: '100%', overflow: 'hidden', height: '85px', margin: '0 0 -24px 0' }}>
           <h1 
             className={`signup-step-title ${isStepTransitioning && previousStep !== null ? 'slide-out' : ''}`}
             style={{ 
@@ -345,36 +551,70 @@ export default function LoginScreen({ onLogin }) {
 
         {/* Input */}
         <div className="signup-step-form">
-          <input
-            type={currentStep === 'age' ? 'number' : currentStep === 'password' ? (showPassword ? 'text' : 'password') : 'text'}
-            className="login-input signup-step-input"
-            placeholder={stepPlaceholders[currentStep]}
-            value={
-              currentStep === 'age' ? age :
-              currentStep === 'name' ? name :
-              currentStep === 'email' ? email :
-              currentStep === 'password' ? password : ''
-            }
-            onChange={(e) => {
-              if (currentStep === 'age') setAge(e.target.value);
-              else if (currentStep === 'name') setName(e.target.value);
-              else if (currentStep === 'email') setEmail(e.target.value);
-              else if (currentStep === 'password') setPassword(e.target.value);
-            }}
-            onKeyDown={(e) => e.key === 'Enter' && !isNextDisabled() && handleNext()}
-            autoFocus
-          />
-          {currentStep === 'password' && (
-            <button
-              className="login-password-toggle"
-              onClick={() => {
-                playButtonSound();
-                setShowPassword(!showPassword);
-              }}
-              type="button"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
+          {currentStep === 'password' ? (
+            <div>
+              <div className="login-password-wrapper">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="login-input signup-step-input"
+                  placeholder={stepPlaceholders[currentStep]}
+                  value={password}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPassword(value);
+                    validatePassword(value);
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && !isNextDisabled() && handleNext()}
+                  autoFocus
+                />
+                <button
+                  className="login-password-toggle"
+                  onClick={() => {
+                    playButtonSound();
+                    setShowPassword(!showPassword);
+                  }}
+                  type="button"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              <div className={`password-strength-feedback ${attemptedPasswordSubmit && !passwordStrength.isValid ? 'invalid' : 'empty'}`}>
+                {attemptedPasswordSubmit && !passwordStrength.isValid ? (
+                  passwordStrength.feedback.split('\n').map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))
+                ) : (
+                  <div style={{ opacity: 0, pointerEvents: 'none' }}>•</div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <input
+                type={currentStep === 'age' ? 'number' : 'text'}
+                className="login-input signup-step-input"
+                placeholder={stepPlaceholders[currentStep]}
+                value={
+                  currentStep === 'age' ? age :
+                  currentStep === 'name' ? name :
+                  currentStep === 'email' ? email : ''
+                }
+                onChange={(e) => {
+                  if (currentStep === 'age') setAge(e.target.value);
+                  else if (currentStep === 'name') setName(e.target.value);
+                  else if (currentStep === 'email') {
+                    const value = e.target.value;
+                    setEmail(value);
+                    validateEmail(value);
+                  }
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && !isNextDisabled() && handleNext()}
+                autoFocus
+              />
+              <div className={`validation-error ${validationError ? 'show' : 'hide'}`}>
+                {validationError || '\u200b'}
+              </div>
+            </div>
           )}
         </div>
 
@@ -393,6 +633,9 @@ export default function LoginScreen({ onLogin }) {
         {/* Spacer for social buttons at bottom */}
         <div className="signup-step-spacer" />
 
+        {/* Divider */}
+        <div className="login-divider signup-divider">OR</div>
+
         {/* Social Login Buttons */}
         <div className="signup-step-social">
           <button className="login-social-btn google" onClick={handleGoogleLogin}>
@@ -403,9 +646,9 @@ export default function LoginScreen({ onLogin }) {
             <img src={facebookLogo} alt="Facebook" width="20" height="20" />
             <span>Continue with Facebook</span>
           </button>
-          <button className="login-social-btn discord" onClick={handleDiscordLogin}>
-            <img src={discordLogo} alt="Discord" width="20" height="20" />
-            <span>Continue with Discord</span>
+          <button className="login-social-btn microsoft" onClick={handleMicrosoftLogin}>
+            <img src={microsoftLogo} alt="Microsoft" width="20" height="20" />
+            <span>Continue with Microsoft</span>
           </button>
         </div>
 

@@ -1,11 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BookOpen, Shield, Send, LogOut, Bell, Moon, Volume2, Edit3, ChevronRight } from 'lucide-react';
 import TopBar from '../common/TopBar.jsx';
 import Toggle from '../common/Toggle.jsx';
+import { auth } from '../../utils/firebaseClient';
 
 export default function SettingsScreen({ darkMode, setDarkMode }) {
   const [notifs,setNotifs] = useState(true);
   const [sounds,setSounds] = useState(true);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Get current user data from Firebase
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      setUser({
+        name: currentUser.displayName || 'My App',
+        photoURL: currentUser.photoURL,
+      });
+    }
+  }, []);
 
   const prefs = [
     { label:"Notifications", sub:"Scholarly alerts and reminders",       Icon:Bell,    val:notifs, set:setNotifs, bg:"#fff1e9", color:"var(--orange-m)" },
@@ -29,11 +42,15 @@ export default function SettingsScreen({ darkMode, setDarkMode }) {
           <div className="profile-card">
             <div className="profile-avatar-wrap">
               <div className="profile-avatar">
-                <span style={{fontSize:32,color:"var(--brown-m)",opacity:.5}}>!</span>
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                ) : (
+                  <span style={{fontSize:32,color:"var(--brown-m)",opacity:.5}}>!</span>
+                )}
               </div>
               <div className="profile-edit-btn"><Edit3 size={11} color="white"/></div>
             </div>
-            <div className="profile-name">My App</div>
+            <div className="profile-name">{user?.name || 'My App'}</div>
             <div className="profile-role">User · Level 1</div>
             <div className="profile-bio">Welcome to your personal study companion.</div>
           </div>
