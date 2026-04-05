@@ -289,8 +289,9 @@
   font-family: 'Newsreader', serif; 
   font-style: italic; 
   font-size: 22px; 
-  color: rgba(40, 24, 12, 0.75); 
+  color: var(--brown); 
   line-height: 1.55; 
+  transition: color 0.7s ease; 
 }
 
 .quote-attr { 
