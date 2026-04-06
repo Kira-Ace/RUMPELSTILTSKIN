@@ -10,6 +10,7 @@ import CalendarScreen from './components/screens/CalendarScreen.jsx';
 import SettingsScreen from './components/screens/SettingsScreen.jsx';
 import { initialTasks, TODAY } from './utils/constants.js';
 import { useDarkMode } from './hooks/useDarkMode.js';
+import { auth } from './utils/firebaseClient.js';
 
 export default function App() {
   const [done, setDone] = useState(false);
@@ -23,27 +24,31 @@ export default function App() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
-        if (data?.session && !error) {
+        if (auth.currentUser) {
           setLoggedIn(true);
+          setDone(true);
+        } else {
           setDone(true);
         }
       } catch (err) {
-        console.log('No active session:', err);
+        console.log('Auth check error:', err);
+        setDone(true);
       }
     };
 
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
         setLoggedIn(true);
-        setDone(true);
+      } else {
+        setLoggedIn(false);
       }
+      setDone(true);
     });
 
-    return () => subscription?.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   return (

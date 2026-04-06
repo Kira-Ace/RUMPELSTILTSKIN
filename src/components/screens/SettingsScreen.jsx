@@ -74,7 +74,15 @@ export default function SettingsScreen({ darkMode, setDarkMode }) {
   }
 
   if (showPreferencesPage) {
-    return <PreferencesPage onBack={() => setShowPreferencesPage(false)} />;
+    return <PreferencesPage 
+      onBack={() => setShowPreferencesPage(false)}
+      darkMode={darkMode}
+      setDarkMode={setDarkMode}
+      notifs={notifs}
+      setNotifs={setNotifs}
+      sounds={sounds}
+      setSounds={setSounds}
+    />;
   }
 
   if (showPreferencesScreen) {
@@ -103,7 +111,6 @@ export default function SettingsScreen({ darkMode, setDarkMode }) {
           </div>
 
           {renderGroup("Account Settings", accountItems)}
-          {renderGroup("General Settings", generalItems)}
           {renderGroup("About & More", aboutItems)}
 
           {/* Sign Out */}
