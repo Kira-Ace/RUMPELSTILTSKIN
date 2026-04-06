@@ -10,7 +10,6 @@ import CalendarScreen from './components/screens/CalendarScreen.jsx';
 import SettingsScreen from './components/screens/SettingsScreen.jsx';
 import { initialTasks, TODAY } from './utils/constants.js';
 import { useDarkMode } from './hooks/useDarkMode.js';
-import { supabase } from './utils/supabaseClient.js';
 
 export default function App() {
   const [done, setDone] = useState(false);
