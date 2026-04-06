@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Bell, Moon, Volume2, BookOpen, Shield, Send, LogOut, ChevronRight, Palette, Globe } from 'lucide-react';
+import { User, Bell, Moon, Volume2, BookOpen, Shield, LogOut, ChevronRight, Palette, Globe } from 'lucide-react';
 import TopBar from '../common/TopBar.jsx';
 import Toggle from '../common/Toggle.jsx';
 import AboutScreen from './AboutScreen.jsx';
@@ -31,7 +31,6 @@ export default function SettingsScreen({ darkMode, setDarkMode }) {
   const accountItems = [
     { label: "Preferences", Icon: User, onClick: () => setShowPreferencesPage(true) },
     { label: "Privacy Policy", Icon: Shield },
-    { label: "Send Feedback", Icon: Send },
   ];
 
   const generalItems = [
