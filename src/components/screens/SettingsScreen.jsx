@@ -14,6 +14,7 @@ export default function SettingsScreen({ darkMode, setDarkMode }) {
   const [showAbout, setShowAbout] = useState(false);
   const [showPreferencesScreen, setShowPreferencesScreen] = useState(false);
   const [showPreferencesPage, setShowPreferencesPage] = useState(false);
+  const [profileExpanded, setProfileExpanded] = useState(false);
 
   useEffect(() => {
     const currentUser = auth.currentUser;
@@ -29,11 +30,6 @@ export default function SettingsScreen({ darkMode, setDarkMode }) {
   const initial = (user?.name || 'R').charAt(0).toUpperCase();
 
   const accountItems = [
-    { label: "Preferences", Icon: User, onClick: () => setShowPreferencesPage(true) },
-    { label: "Privacy Policy", Icon: Shield },
-  ];
-
-  const generalItems = [
     { label: "Appearance", Icon: Palette, toggle: true, val: darkMode, set: setDarkMode },
     { label: "Notifications", Icon: Bell, toggle: true, val: notifs, set: setNotifs },
     { label: "Sound Effects", Icon: Volume2, toggle: true, val: sounds, set: setSounds },
@@ -73,15 +69,7 @@ export default function SettingsScreen({ darkMode, setDarkMode }) {
   }
 
   if (showPreferencesPage) {
-    return <PreferencesPage 
-      onBack={() => setShowPreferencesPage(false)}
-      darkMode={darkMode}
-      setDarkMode={setDarkMode}
-      notifs={notifs}
-      setNotifs={setNotifs}
-      sounds={sounds}
-      setSounds={setSounds}
-    />;
+    return <PreferencesPage onBack={() => setShowPreferencesPage(false)} />;
   }
 
   if (showPreferencesScreen) {
@@ -93,23 +81,55 @@ export default function SettingsScreen({ darkMode, setDarkMode }) {
       <TopBar />
       <div className="scroll-content">
         <div className="settings-wrap">
-          {/* Profile Row */}
-          <div className="settings-profile-row" onClick={() => setShowPreferencesScreen(true)}>
-            <div className="settings-profile-avatar">
-              {user?.photoURL ? (
-                <img src={user.photoURL} alt="Profile" />
-              ) : (
-                <span className="settings-profile-initial">{initial}</span>
-              )}
+          {/* Profile Section - Combined */}
+          <div className={`settings-profile-wrapper${profileExpanded ? ' expanded' : ''}`}>
+            <div className="settings-profile-row" onClick={() => setProfileExpanded(!profileExpanded)}>
+              <div className="settings-profile-avatar">
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="Profile" />
+                ) : (
+                  <span className="settings-profile-initial">{initial}</span>
+                )}
+              </div>
+              <div className="settings-profile-info">
+                <div className="settings-profile-name">{user?.name || 'My App'}</div>
+                {user?.email && <div className="settings-profile-email">{user.email}</div>}
+              </div>
+              <ChevronRight size={18} className={`settings-row-chevron${profileExpanded ? ' expanded' : ''}`} />
             </div>
-            <div className="settings-profile-info">
-              <div className="settings-profile-name">{user?.name || 'My App'}</div>
-              {user?.email && <div className="settings-profile-email">{user.email}</div>}
-            </div>
-            <ChevronRight size={18} className="settings-row-chevron" />
-          </div>
 
-          {renderGroup("Account Settings", accountItems)}
+            {/* Edit Profile Button */}
+            {profileExpanded && (
+              <button 
+                onClick={() => setShowPreferencesScreen(true)}
+                className="settings-edit-profile-btn-divider"
+              >
+                Edit your profile
+              </button>
+            )}
+
+            {/* Profile Dropdown Content - Inside wrapper */}
+            {profileExpanded && (
+              <div className="settings-profile-dropdown">
+                {accountItems.map(({ label: rowLabel, Icon, toggle, val, set, onClick }, i) => (
+                  <div 
+                    key={rowLabel} 
+                    className="settings-row"
+                    onClick={onClick ? onClick : () => {}}
+                  >
+                    <div className="settings-row-icon"><Icon size={18} /></div>
+                    <div className="settings-row-label">{rowLabel}</div>
+                    {toggle ? (
+                      <Toggle on={val} toggle={() => set(v => !v)} />
+                    ) : (
+                      <ChevronRight size={16} className="settings-row-chevron" />
+                    )}
+                    {i < accountItems.length - 1 && <div className="settings-row-divider" />}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           {renderGroup("About & More", aboutItems)}
 
           {/* Sign Out */}

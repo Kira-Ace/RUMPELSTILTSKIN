@@ -5,6 +5,18 @@
   gap: 0; 
 }
 
+/* Profile Wrapper */
+.settings-profile-wrapper {
+  background: var(--settings-row-bg);
+  border-radius: 14px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.settings-profile-wrapper.expanded {
+  border-radius: 14px;
+}
+
 /* Profile Row */
 .settings-profile-row {
   display: flex;
@@ -12,8 +24,8 @@
   gap: 14px;
   padding: 18px 16px;
   background: var(--settings-row-bg);
-  border-radius: 14px;
-  margin-bottom: 24px;
+  border-radius: 0;
+  margin-bottom: 0;
   cursor: pointer;
 }
 
@@ -49,12 +61,18 @@
   min-width: 0;
 }
 
+.settings-profile-dropdown {
+  background: var(--settings-row-bg);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 8px 0;
+}
+
 .settings-profile-name {
   font-family: 'Work Sans', sans-serif;
   font-size: 16px;
   font-weight: 600;
   color: var(--brown);
-}
+}0
 
 .settings-profile-email {
   font-family: 'Work Sans', sans-serif;
@@ -64,6 +82,60 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.settings-edit-profile-btn {
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: transparent;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: default;
+  font-family: 'Work Sans', sans-serif;
+  transition: all 0.2s;
+  width: 100%;
+  display: block;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.settings-edit-profile-btn.visible {
+  background: rgba(244, 123, 32, 0.1);
+  border: 1px solid rgba(244, 123, 32, 0.3);
+  color: var(--orange);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.settings-edit-profile-btn.visible:hover {
+  background: rgba(244, 123, 32, 0.2);
+  border-color: rgba(244, 123, 32, 0.5);
+}
+
+.settings-edit-profile-btn-divider {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  color: var(--orange);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Work Sans', sans-serif;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.phone.dark-mode .settings-edit-profile-btn-divider {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.settings-edit-profile-btn-divider:hover {
+  background: rgba(244, 123, 32, 0.05);
 }
 
 /* Section Groups */
@@ -124,6 +196,11 @@
 .settings-row-chevron {
   color: var(--outline);
   flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.settings-row-chevron.expanded {
+  transform: rotate(90deg);
 }
 
 /* Divider between rows */
@@ -156,4 +233,9 @@
   letter-spacing: 1px; 
   color: var(--outline); 
   padding: 12px 0 10px;
+}
+
+/* Dark Mode */
+.phone.dark-mode .settings-profile-dropdown {
+  border-top-color: rgba(255, 255, 255, 0.1);
 }

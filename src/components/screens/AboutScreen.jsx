@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import TopBar from '../common/TopBar.jsx';
+import rumpelImage from '../assets/rumpel.png';
 import '../../styles/about.css';
 
 export default function AboutScreen({ onBack }) {
@@ -12,6 +13,11 @@ export default function AboutScreen({ onBack }) {
           <button className="about-back-btn" onClick={onBack}>
             <ArrowLeft size={20} />
           </button>
+
+          {/* Logo Image */}
+          <div className="about-logo-container">
+            <img src={rumpelImage} alt="Rumpel Logo" className="about-logo" />
+          </div>
 
           {/* Header */}
           <div className="about-header">
