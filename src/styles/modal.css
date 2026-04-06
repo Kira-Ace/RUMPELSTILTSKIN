@@ -1,16 +1,26 @@
 .modal-overlay { 
   position: absolute; 
   inset: 0; 
-  background: transparent; 
+  background: rgba(40, 24, 12, 0.25); 
   z-index: 50; 
   display: flex; 
-  align-items: flex-end; 
+  align-items: flex-end;
+  justify-content: center;
   animation: fadeIn 0.2s ease; 
+}
+
+.modal-overlay.closing {
+  animation: fadeOut 0.26s ease forwards;
 }
 
 @keyframes fadeIn { 
   from{opacity: 0} 
   to{opacity: 1} 
+}
+
+@keyframes fadeOut {
+  from { opacity: 1 }
+  to { opacity: 0 }
 }
 
 .modal-sheet { 
@@ -96,20 +106,57 @@
 /* New Task Modal */
 .new-task-modal {
   background: var(--bg);
-  border-radius: 26px 26px 0 0;
-  padding: 22px 20px 34px;
+  border-radius: 20px 20px 0 0;
+  padding: 22px 20px 28px;
   width: 100%;
-  animation: sheetUp 0.3s ease;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideUp 0.3s ease;
   display: flex;
   flex-direction: column;
   gap: 0;
+}
+
+.new-task-modal.closing {
+  animation: modalSlideDown 0.26s ease forwards;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modalSlideDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
 }
 
 .modal-top-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.modal-message-text {
+  font-family: 'Newsreader', serif;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--brown-m);
+  flex: 1;
 }
 
 .inbox-selector {
@@ -132,8 +179,8 @@
 }
 
 .modal-close-btn {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--surface-hi);
   border: none;
@@ -143,6 +190,7 @@
   cursor: pointer;
   color: var(--brown-m);
   transition: background 0.2s;
+  flex-shrink: 0;
 }
 
 .modal-close-btn:hover {
@@ -159,7 +207,7 @@
   outline: none;
   padding: 0;
   width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
   line-height: 1.2;
 }
 
@@ -173,7 +221,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 .modal-date-info {
@@ -183,22 +231,6 @@
   font-family: 'Work Sans', sans-serif;
   font-size: 15px;
   color: var(--brown);
-}
-
-.modal-flag-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--brown-m);
-  transition: opacity 0.2s;
-}
-
-.modal-flag-btn:hover {
-  opacity: 0.7;
 }
 
 .modal-create-btn {
@@ -216,4 +248,120 @@
 
 .modal-create-btn:hover {
   transform: scale(0.98);
+}
+
+.modal-task-input {
+  font-family: 'Noto Serif', serif;
+  font-size: 15px;
+  color: var(--brown);
+  background: white;
+  border: 1.5px solid var(--outline-v);
+  border-radius: 12px;
+  padding: 10px 12px;
+  outline: none;
+  width: 100%;
+}
+
+.modal-task-input:focus {
+  border-color: var(--orange-m);
+}
+
+.modal-task-input::placeholder {
+  color: var(--brown-m);
+  opacity: 0.5;
+}
+
+/* Drum Roller Picker */
+.drum-picker-container {
+  position: relative;
+}
+
+.drum-picker-wrapper {
+  display: flex;
+  gap: 0;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 160px;
+}
+
+.drum-selection-band-wrapper {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 58%;
+  height: 40px;
+  transform: translateY(-50%);
+  background: rgba(120, 120, 128, 0.08);
+  border-top: 0.5px solid rgba(120, 120, 128, 0.15);
+  border-bottom: 0.5px solid rgba(120, 120, 128, 0.15);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.drum-roller-column {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.drum-selection-band {
+  display: none;
+}
+
+.drum-fade-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.drum-fade-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.drum-item {
+  transition: none;
+}
+
+/* Description Input */
+.modal-desc-input-wrapper {
+  margin-top: 0;
+  margin-bottom: 1px;
+}
+
+.modal-desc-input {
+  font-family: 'Newsreader', serif;
+  font-size: 14px;
+  color: var(--brown-m);
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0 0 0 16px;
+  width: 100%;
+  resize: none;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.modal-desc-input::placeholder {
+  color: var(--brown-m);
+  opacity: 0.4;
+}
+
+.modal-desc-divider {
+  height: 1px;
+  background: var(--outline-v);
+  margin: 1px 0;
 }

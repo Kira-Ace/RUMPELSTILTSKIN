@@ -13,9 +13,18 @@
   animation: fadeIn 0.2s ease-out;
 }
 
+.chat-sheet-overlay.closing {
+  animation: chatFadeOut 0.26s ease forwards;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes chatFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 /* ===== Sheet ===== */
@@ -30,6 +39,20 @@
   transition: height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: height;
   animation: slideUp 0.3s ease-out;
+}
+
+.chat-sheet.closing {
+  animation: chatSlideDown 0.26s ease forwards;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes chatSlideDown {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(100%); opacity: 0; }
 }
 
 .chat-sheet.dragging {

@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Edit3, Trash2, Inbox, X, Calendar, Flag, ChevronDown, MoreVertical } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, Plus, Edit3, Trash2, X, Calendar, ChevronDown, MoreVertical } from 'lucide-react';
 import TopBar from '../common/TopBar.jsx';
+import DrumRoller from '../common/DrumRoller.jsx';
 import { TODAY, MONTHS, DAYS } from '../../utils/constants.js';
 import { 
   buildMonthGrid, 
@@ -11,24 +12,105 @@ import {
   formatDateKey 
 } from '../../utils/dateUtils.js';
 
+const HOURS_12 = Array.from({length: 12}, (_, i) => String(i + 1));
+const MINUTES = Array.from({length: 60}, (_, i) => String(i).padStart(2, '0'));
+const PERIODS = ['AM', 'PM'];
+
+function parseTime(timeStr) {
+  if (!timeStr) return { h: 8, m: 0, period: 0 }; // default 8:00 AM
+  const parts = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (!parts) return { h: 8, m: 0, period: 0 };
+  let h = parseInt(parts[1]);
+  const m = parseInt(parts[2]);
+  const p = parts[3];
+  if (p) {
+    return { h: h === 12 ? 12 : h, m, period: p.toUpperCase() === 'PM' ? 1 : 0 };
+  }
+  // 24h format
+  const period = h >= 12 ? 1 : 0;
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return { h, m, period };
+}
+
+function formatTime(h, m, periodIdx) {
+  const period = PERIODS[periodIdx];
+  return `${h}:${String(m).padStart(2, '0')} ${period}`;
+}
+
+function TimeDrumPicker({ time, onChange }) {
+  const parsed = useMemo(() => parseTime(time), [time]);
+  
+  return (
+    <div className="drum-picker-container" style={{marginTop: 0, marginBottom: 0, position: 'relative'}}>
+      <div className="drum-selection-band-wrapper" />
+      <div className="drum-picker-wrapper">
+        <DrumRoller
+          items={HOURS_12}
+          selectedIndex={parsed.h - 1}
+          onChange={(i) => onChange(formatTime(i + 1, parsed.m, parsed.period))}
+          isLooping={true}
+        />
+        <DrumRoller
+          items={MINUTES}
+          selectedIndex={parsed.m}
+          onChange={(i) => onChange(formatTime(parsed.h, i, parsed.period))}
+          isLooping={true}
+        />
+        <DrumRoller
+          items={PERIODS}
+          selectedIndex={parsed.period}
+          onChange={(i) => onChange(formatTime(parsed.h, parsed.m, i))}
+          isLooping={false}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function CalendarScreen({ tasks, setTasks }) {
   const [sel, setSel] = useState({...TODAY});
   const [view, setView] = useState({y:TODAY.y, m:TODAY.m});
   const [expanded, setExpanded] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [isClosingModal, setIsClosingModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [newTask, setNewTask] = useState({title:"", time:"", desc:"", tag:"Other"});
-  const [selectedInbox, setSelectedInbox] = useState("Inbox");
   const [showDateMenu, setShowDateMenu] = useState(false);
   const [dateNameEdited, setDateNameEdited] = useState(false);
   const [editingDateName, setEditingDateName] = useState(false);
   const [customDateName, setCustomDateName] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
   const [pillY, setPillY] = useState(null);
   const [pillDelta, setPillDelta] = useState(0);
   const [anim, setAnim] = useState("");
   
   const swipeX = useRef(null);
   const animT = useRef(null);
+  const modalCloseT = useRef(null);
+
+  const modalMessages = [
+    "Anything exciting today?",
+    "What's on your mind today?",
+    "Any plans for today?",
+    "What's new with you?",
+    "Anything worth noting?",
+    "Any bright spots today?",
+    "What happened today?",
+    "Anything to remember?",
+    "What made you smile?",
+    "Anything remarkable today?",
+    "What's capturing your attention?",
+    "Any good moments?",
+    "What stood out today?",
+    "Anything inspiring today?",
+    "What's your highlight?",
+  ];
+
+  const getRandomMessage = () => {
+    const randomIndex = Math.floor(Math.random() * modalMessages.length);
+    return modalMessages[randomIndex];
+  };
 
   const isPill = pillY !== null;
   const trigAnim = d => { 
@@ -57,6 +139,25 @@ export default function CalendarScreen({ tasks, setTasks }) {
 
   const taskKey = formatDateKey(sel.y, sel.m, sel.d);
   const selTasks = tasks[taskKey] || [];
+
+  const openModal = () => {
+    clearTimeout(modalCloseT.current);
+    setIsClosingModal(false);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    clearTimeout(modalCloseT.current);
+    setIsClosingModal(true);
+    modalCloseT.current = setTimeout(() => {
+      setShowModal(false);
+      setIsClosingModal(false);
+    }, 260);
+  };
+
+  useEffect(() => {
+    return () => clearTimeout(modalCloseT.current);
+  }, []);
   
   const addTask = () => {
     if(!newTask.title) return;
@@ -76,7 +177,7 @@ export default function CalendarScreen({ tasks, setTasks }) {
       }));
     }
     setNewTask({title:"", time:"", desc:"", tag:"Other"}); 
-    setShowModal(false);
+    closeModal();
   };
 
   const deleteTask = (taskId) => {
@@ -89,7 +190,8 @@ export default function CalendarScreen({ tasks, setTasks }) {
   const startEdit = (task) => {
     setNewTask(task);
     setEditingId(task.id);
-    setShowModal(true);
+    openModal();
+    setModalMessage(getRandomMessage());
   };
 
   const grid = buildMonthGrid(view.y, view.m);
@@ -224,22 +326,29 @@ export default function CalendarScreen({ tasks, setTasks }) {
         <div className="sel-date-header">
           <div className="sel-date-left">
             <span className="sel-day-num">{sel.d}</span>
-            {editingDateName ? (
-              <input 
-                type="text"
-                className="sel-day-name-input"
-                value={customDateName}
-                onChange={e => setCustomDateName(e.target.value)}
-                onBlur={() => {
-                  setEditingDateName(false);
-                  if(customDateName) setDateNameEdited(true);
-                }}
-                autoFocus
-              />
-            ) : (
-              <span className="sel-day-name">{customDateName || dowName(sel)}</span>
-            )}
+            <span className="sel-day-name">{dowName(sel)}</span>
             {dateNameEdited && <div className="sel-date-divider"/>}
+            {dateNameEdited && (
+              editingDateName ? (
+                <input 
+                  type="text"
+                  className="sel-day-name-input"
+                  value={customDateName}
+                  onChange={e => setCustomDateName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      setEditingDateName(false);
+                    }
+                  }}
+                  onBlur={() => {
+                    setEditingDateName(false);
+                  }}
+                  autoFocus
+                />
+              ) : (
+                <span className="sel-custom-date-name">{customDateName}</span>
+              )
+            )}
           </div>
           <div className="sel-date-horizontal-line"/>
           <div style={{position: "relative"}}>
@@ -251,10 +360,10 @@ export default function CalendarScreen({ tasks, setTasks }) {
             </button>
             {showDateMenu && (
               <div className="sel-date-menu-popover">
-                <button className="sel-date-menu-item" onClick={() => {setShowModal(true); setShowDateMenu(false);}}>
+                <button className="sel-date-menu-item" onClick={() => {setShowModal(true); setModalMessage(getRandomMessage()); setShowDateMenu(false);}}>
                   Create task
                 </button>
-                <button className="sel-date-menu-item" onClick={() => {setEditingDateName(true); setShowDateMenu(false);}}>
+                <button className="sel-date-menu-item" onClick={() => {setEditingDateName(true); setDateNameEdited(true); setShowDateMenu(false);}}>
                   Edit datename
                 </button>
               </div>
@@ -264,73 +373,89 @@ export default function CalendarScreen({ tasks, setTasks }) {
 
         {/* Tasks */}
         <div className="tasks-scroll">
-          {selTasks.map((t, i) => (
-            <div key={t.id} className={`task-card ${i === 1 ? "accent" : ""}`}>
-              <div className="task-time">
-                <span>{t.time}</span>
-                <div style={{display:"flex", gap:6}}>
-                  <button onClick={() => startEdit(t)} style={{background:"none", border:"none", cursor:"pointer", padding:0, display:"flex", alignItems:"center", justifyContent:"center"}}>
-                    <Edit3 size={16} style={{color:"var(--brown-m)"}}/>
-                  </button>
-                  <button onClick={() => deleteTask(t.id)} style={{background:"none", border:"none", cursor:"pointer", padding:0, display:"flex", alignItems:"center", justifyContent:"center"}}>
-                    <Trash2 size={16} style={{color:"var(--outline)", opacity:0.6}}/>
-                  </button>
+          {selTasks.map((t, i) => {
+            const tagColors = {"Math": "#5B8DEE", "Science":"#EA4335", "English":"#FBBC04", "History":"#34A853", "Other":"#FA7B17"};
+            const tagColor = tagColors[t.tag] || "#9E9E9E";
+            return (
+              <div key={t.id} className="task-card-new">
+                <div className="task-indicator" style={{background: tagColor}}/>
+                <div className="task-content">
+                  <div className="task-title-row">
+                    <div className="task-title-new">{t.title}</div>
+                    <div className="task-actions">
+                      <button onClick={() => startEdit(t)} style={{background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--brown-m)"}}>
+                        <Edit3 size={18}/>
+                      </button>
+                      <button onClick={() => deleteTask(t.id)} style={{background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center", justifyContent:"center", transition:"transform 0.1s", color:"var(--outline)", opacity:0.6}} onMouseDown={(e) => {e.currentTarget.style.transform = "scale(0.85)"}} onMouseUp={(e) => {e.currentTarget.style.transform = "scale(1)"}} onMouseLeave={(e) => {e.currentTarget.style.transform = "scale(1)"}}>
+                        <Trash2 size={18}/>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="task-divider-line"/>
+                  {t.desc && <div className="task-desc-new">{t.desc}</div>}
+                  {t.time && <div className="task-time-new">{t.time}</div>}
                 </div>
               </div>
-              <div className="task-title">{t.title}</div>
-              {t.desc && <div className="task-desc">{t.desc}</div>}
-              <div className="task-footer">
-                <span className="task-tag-badge">{t.tag}</span>
-              </div>
-            </div>
-          ))}
-          <button className="add-task-btn" onClick={() => {setEditingId(null); setNewTask({title:"", time:"", desc:"", tag:"Other"}); setShowModal(true);}}>
+            );
+          })}
+          <button className="add-task-btn" onClick={() => {setEditingId(null); setNewTask({title:"", time:"", desc:"", tag:"Other"}); openModal(); setModalMessage(getRandomMessage());}}>
             <Plus size={15}/> Add task
           </button>
         </div>
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="new-task-modal">
-            {/* Top Row: Inbox selector + Close button */}
+        <div className={`modal-overlay ${isClosingModal ? "closing" : ""}`} onClick={e => e.target === e.currentTarget && closeModal()}>
+          <div className={`new-task-modal ${isClosingModal ? "closing" : ""}`}>
+            {/* Top Row: Message + Close button */}
             <div className="modal-top-row">
-              <div className="inbox-selector">
-                <Inbox size={20} style={{color: "var(--brown)"}}/>
-                <span>{selectedInbox}</span>
-                <ChevronDown size={18} style={{color: "var(--brown-m)"}}/>
-              </div>
+              <span className="modal-message-text">{editingId ? "Edit Task" : modalMessage}</span>
               <button 
                 className="modal-close-btn"
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
               >
-                <X size={20}/>
+                <X size={16}/>
               </button>
             </div>
 
-            {/* Middle: Large text input */}
+            {/* Title input */}
             <input 
               className="modal-task-title-input"
               type="text"
-              placeholder="New Task"
+              placeholder="Task title"
               value={newTask.title}
               onChange={e => setNewTask(p => ({...p, title: e.target.value}))}
             />
 
-            {/* Bottom Row: Date + Flag + Create button */}
+            {/* Description input */}
+            <div className="modal-desc-input-wrapper">
+              <textarea 
+                className="modal-desc-input"
+                placeholder="Description (optional)"
+                value={newTask.desc}
+                onChange={e => setNewTask(p => ({...p, desc: e.target.value}))}
+                rows="2"
+              />
+            </div>
+            <div className="modal-desc-divider" />
+
+            {/* Time Picker - Drum Roller */}
+            <TimeDrumPicker
+              time={newTask.time}
+              onChange={(time) => setNewTask(p => ({...p, time}))}
+            />
+
+            {/* Bottom Row: Date + Create button */}
             <div className="modal-bottom-row">
               <div className="modal-date-info">
-                <Calendar size={18} style={{color: "var(--brown)"}}/>
+                <Calendar size={18} style={{color: "var(--brown)" }}/>
                 <span>{sel.d} {MONTHS[sel.m].slice(0,3)}</span>
               </div>
-              <button className="modal-flag-btn">
-                <Flag size={18} style={{color: "var(--brown-m)"}}/>
-              </button>
               <button 
                 className="modal-create-btn"
-                onClick={() => {addTask(); setShowModal(false);}}
+                onClick={addTask}
               >
-                Create
+                {editingId ? "Update" : "Create"}
               </button>
             </div>
           </div>

@@ -41,6 +41,8 @@ async function generateTitle(messages) {
 }
 
 export default function ChatModal({ isOpen, onClose }) {
+  const [isRendered, setIsRendered] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
   const [chats, setChats] = useState(() => [makeChat()]);
   const [activeChatId, setActiveChatId] = useState(1);
   const [input, setInput] = useState("");
@@ -78,11 +80,30 @@ export default function ChatModal({ isOpen, onClose }) {
   const dragStartH = useRef(SNAP_MID);
   const containerRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const closeTimerRef = useRef(null);
+
+  const requestClose = useCallback(() => {
+    if (isClosing) return;
+    clearTimeout(closeTimerRef.current);
+    setIsClosing(true);
+    closeTimerRef.current = setTimeout(() => {
+      setIsRendered(false);
+      setIsClosing(false);
+      onClose();
+    }, 260);
+  }, [isClosing, onClose]);
 
   /* reset height when modal opens */
   useEffect(() => {
-    if (isOpen) setSheetHeight(SNAP_MID);
+    if (isOpen) {
+      clearTimeout(closeTimerRef.current);
+      setIsRendered(true);
+      setIsClosing(false);
+      setSheetHeight(SNAP_MID);
+    }
   }, [isOpen]);
+
+  useEffect(() => () => clearTimeout(closeTimerRef.current), []);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -114,12 +135,12 @@ export default function ChatModal({ isOpen, onClose }) {
   const snapTo = useCallback((h) => {
     const snaps = [SNAP_MIN, SNAP_MID, SNAP_MAX];
     // if dragged below minimum, close
-    if (h < 0.28) { onClose(); return; }
+    if (h < 0.28) { requestClose(); return; }
     // find nearest snap
     let best = snaps[0];
     for (const s of snaps) if (Math.abs(s - h) < Math.abs(best - h)) best = s;
     setSheetHeight(best);
-  }, [onClose]);
+  }, [requestClose]);
 
   const onDragEnd = useCallback(() => {
     if (!isDragging) return;
@@ -256,13 +277,13 @@ export default function ChatModal({ isOpen, onClose }) {
 
   const visibleSuggestions = showAllSuggestions ? SUGGESTIONS : SUGGESTIONS.slice(0, 3);
 
-  if (!isOpen) return null;
+  if (!isRendered) return null;
 
   return (
-    <div className="chat-sheet-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className={`chat-sheet-overlay ${isClosing ? "closing" : ""}`} onClick={(e) => { if (e.target === e.currentTarget) requestClose(); }}>
       <div
         ref={containerRef}
-        className={`chat-sheet ${isDragging ? "dragging" : ""}`}
+        className={`chat-sheet ${isDragging ? "dragging" : ""} ${isClosing ? "closing" : ""}`}
         style={{ height: `${sheetHeight * 100}%` }}
       >
         {/* Drag handle */}
@@ -282,7 +303,7 @@ export default function ChatModal({ isOpen, onClose }) {
           <button className="chat-new-btn" onClick={handleNewChat}>
             {activeChat?.title || "New Chat"}
           </button>
-          <button className="chat-header-btn" onClick={onClose}>
+          <button className="chat-header-btn" onClick={requestClose}>
             <X size={20} />
           </button>
         </div>

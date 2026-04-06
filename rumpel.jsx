@@ -149,9 +149,6 @@ const Styles = () => (
     .task-title { font-family:'Newsreader',serif; font-size:18px; font-weight:700; color:var(--brown); margin-bottom:4px; }
     .task-card.accent .task-title { color:var(--brown); }
     .task-desc { font-family:'Noto Serif',serif; font-size:13px; color:var(--brown-m); line-height:1.5; }
-    .task-footer { display:flex; align-items:center; gap:6px; margin-top:8px; }
-    .task-tag-badge { font-family:'Work Sans',sans-serif; font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; background:rgba(153,71,0,.12); color:var(--orange); }
-    .task-card.accent .task-tag-badge { background:rgba(0,0,0,.1); color:var(--brown); }
     .add-task-btn { border:1.5px dashed var(--outline-v); border-radius:16px; padding:14px; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; color:var(--outline); font-family:'Work Sans',sans-serif; font-size:14px; font-weight:600; background:transparent; transition:border-color .2s,color .2s; flex-shrink:0; margin-bottom:10px; width:100%; }
     .add-task-btn:hover { border-color:var(--orange-m); color:var(--orange-m); }
     .tasks-scroll { flex:1; overflow-y:auto; padding-bottom:80px; }
@@ -287,7 +284,7 @@ function selDow({y,m,d})  { return (new Date(y,m,d).getDay()+6)%7; }
 const initialTasks = {
   [dk(2026,3,1)]:  [{id:1,title:"Physics Review",time:"12:30",desc:"Focus on thermodynamics and fluid dynamics.",tag:"Science"},{id:2,title:"Essay Draft",time:"15:00",desc:"Finalizing the introduction for the lit review.",tag:"English",accent:true}],
   [dk(2026,2,31)]: [{id:3,title:"Math Problem Set",time:"18:00",desc:"Linear Algebra III — chapter exercises.",tag:"Math"}],
-  [dk(2026,2,30)]: [{id:5,title:"Chemistry Lab",time:"09:00",desc:"Titration results and analysis.",tag:"Science"},{id:6,title:"Vocab Quiz Prep",time:"16:00",desc:"Unit 5 — 30 words.",tag:"English"},{id:7,title:"Group Meeting",time:"18:30",desc:"Project sync.",tag:"Other"}],
+  [dk(2026,2,30)]: [{id:5,title:"Chemistry Lab",time:"09:00",desc:"Titration results and analysis.",tag:"Science"},{id:6,title:"Vocab Quiz Prep",time:"16:00",desc:"Unit 5 — 30 words.",tag:"English"},{id:7,title:"Group Meeting",time:"18:30",desc:"Project sync.",tag:"Science"}],
   [dk(2026,3,7)]:  [{id:8,title:"History Essay",time:"10:00",desc:"French Revolution causes and effects.",tag:"History"}],
   [dk(2026,3,14)]: [{id:9,title:"Mid-term Review",time:"09:00",desc:"Chapters 1–8 comprehensive review.",tag:"Science"},{id:10,title:"Library Session",time:"14:00",desc:"Research for comparative lit essay.",tag:"English"}],
   [dk(2026,4,5)]:  [{id:11,title:"Calc Problem Set",time:"11:00",desc:"Differential equations, problem set 3.",tag:"Math"}],
@@ -430,7 +427,7 @@ function CalendarScreen({ tasks, setTasks }) {
   const [view,setView]       = useState({y:TODAY.y,m:TODAY.m});
   const [expanded,setExpanded] = useState(false);
   const [showModal,setShowModal] = useState(false);
-  const [newTask,setNewTask]   = useState({title:"",time:"",desc:"",tag:"Other"});
+  const [newTask,setNewTask]   = useState({title:"",time:"",desc:"",tag:"Math"});
   const [pillY,setPillY]       = useState(null);
   const [pillDelta,setPillDelta] = useState(0);
   const swipeX = useRef(null);
@@ -457,7 +454,7 @@ function CalendarScreen({ tasks, setTasks }) {
   const addTask  = () => {
     if(!newTask.title)return;
     setTasks(p=>({...p,[taskKey]:[...(p[taskKey]||[]),{...newTask,id:Date.now()}]}));
-    setNewTask({title:"",time:"",desc:"",tag:"Other"}); setShowModal(false);
+    setNewTask({title:"",time:"",desc:"",tag:"Math"}); setShowModal(false);
   };
 
   const grid = buildMonthGrid(view.y,view.m);
@@ -579,7 +576,6 @@ function CalendarScreen({ tasks, setTasks }) {
               </div>
               <div className="task-title">{t.title}</div>
               {t.desc && <div className="task-desc">{t.desc}</div>}
-              <div className="task-footer"><span className="task-tag-badge">{t.tag}</span></div>
             </div>
           ))}
           <button className="add-task-btn" onClick={()=>setShowModal(true)}>
@@ -597,7 +593,7 @@ function CalendarScreen({ tasks, setTasks }) {
             <input className="modal-input" placeholder="Time (e.g. 14:00)"     value={newTask.time}  onChange={e=>setNewTask(p=>({...p,time:e.target.value}))}/>
             <input className="modal-input" placeholder="Description (optional)" value={newTask.desc}  onChange={e=>setNewTask(p=>({...p,desc:e.target.value}))}/>
             <select className="modal-input" value={newTask.tag} onChange={e=>setNewTask(p=>({...p,tag:e.target.value}))}>
-              {["Math","Science","English","History","Other"].map(t=><option key={t}>{t}</option>)}
+              {["Math","Science","English","History"].map(t=><option key={t}>{t}</option>)}
             </select>
             <div className="modal-btns">
               <button className="modal-btn secondary" onClick={()=>setShowModal(false)}>Cancel</button>

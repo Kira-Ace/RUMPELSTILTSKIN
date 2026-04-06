@@ -31,7 +31,6 @@ export default function SettingsScreen({ darkMode, setDarkMode }) {
   const accountItems = [
     { label: "Preferences", Icon: User, onClick: () => setShowPreferencesPage(true) },
     { label: "Privacy Policy", Icon: Shield },
-    { label: "Send Feedback", Icon: Send },
   ];
 
   const generalItems = [
