@@ -291,7 +291,6 @@
   font-size: 22px; 
   color: var(--brown); 
   line-height: 1.55; 
-  transition: color 0.7s ease; 
 }
 
 .quote-attr { 

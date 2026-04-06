@@ -584,7 +584,7 @@ input[type="number"] {
 .signup-step-form {
   position: relative;
   width: 100%;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .signup-step-input {
@@ -599,6 +599,7 @@ input[type="number"] {
 .signup-step-btn {
   width: 100%;
   margin-bottom: 0;
+  margin-top: 0;
 }
 
 .signup-step-spacer {
@@ -621,11 +622,11 @@ input[type="number"] {
 
 /* Validation Error Styles */
 .validation-error {
-  color: #e74c3c;
+  color: var(--orange-m);
   font-family: 'Work Sans', sans-serif;
   font-size: 13px;
   font-weight: 500;
-  margin-top: 0;
+  margin-top: 12px;
   padding: 0;
   display: flex;
   align-items: center;
@@ -643,6 +644,7 @@ input[type="number"] {
   content: '✕';
   font-weight: 700;
   font-size: 14px;
+  color: var(--orange-m);
 }
 
 .validation-error.hide::before {
@@ -654,43 +656,60 @@ input[type="number"] {
 .password-strength-feedback {
   font-family: 'Work Sans', sans-serif;
   font-size: 13px;
-  padding: 12px 12px;
-  margin-top: 8px;
-  border-radius: 6px;
-  line-height: 1.5;
-  transition: all 0.2s ease;
+  padding: 14px 16px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  line-height: 1.6;
+  transition: all 0.25s ease;
   min-height: auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  border: none;
 }
 
 .password-strength-feedback.empty {
   min-height: 0;
   background: transparent;
-  border-left: 3px solid transparent;
   padding: 0;
   margin-top: 0;
+  margin-bottom: 0;
   display: none;
 }
 
 .password-strength-feedback.invalid {
-  background: rgba(231, 76, 60, 0.08);
-  color: #e74c3c;
-  border-left: 3px solid #e74c3c;
+  background: var(--bg-low);
+  color: var(--brown-m);
 }
 
 .password-strength-feedback.valid {
-  background: rgba(46, 204, 113, 0.08);
-  color: #27ae60;
-  border-left: 3px solid #27ae60;
+  background: var(--bg-low);
+  color: var(--orange);
 }
 
 .password-strength-feedback div {
-  margin: 4px 0;
+  margin: 3px 0;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+}
+
+.pw-feedback-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.pw-feedback-item::before {
+  content: '\2715';
+  color: var(--orange-m);
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 .password-strength-feedback.valid div:first-child {
   font-weight: 600;
+  color: var(--orange);
 }
 

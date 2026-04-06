@@ -5,6 +5,7 @@ import {
   FacebookAuthProvider, 
   OAuthProvider 
 } from 'firebase/auth';
+import { setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCIN5A1CMFhJXRZsBjaT-mrwhuYtTfpFss",
@@ -20,6 +21,11 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Auth
 export const auth = getAuth(app);
+
+// Set persistence to local
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error('Error setting persistence:', error);
+});
 
 // Initialize OAuth Providers
 export const googleProvider = new GoogleAuthProvider();

@@ -15,12 +15,6 @@ export default function HomeScreen({ tasks }) {
         <div className="home-wrap">
           {/* TEMPLATE: Replace with your app's greeting/user data */}
           <Greeting userName="My App" />
-
-          {/* Quote - TEMPLATE: Add your own motivational quotes below */}
-          <div className="quote-section">
-            <p className="quote-text">"The capacity to learn is a gift; the ability to learn is a skill; the willingness to learn is a choice."</p>
-            <p className="quote-attr">— Brian Herbert</p>
-          </div>
         </div>
       </div>
     </>

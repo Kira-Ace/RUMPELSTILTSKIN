@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Home, CalendarDays, Settings } from "lucide-react";
 import rumpelIcon from "../assets/rumpel.png";
+import scaleDownVine from "../assets/scaledown.png";
+import scaleUpVine from "../assets/scaleup.png";
 
 /**
  * Bottom Navigation component for the Rumpel app.
@@ -31,16 +33,20 @@ export default function BottomNav({ active, setActive, setChatModalOpen }) {
 
   return (
     <div className="bottom-nav">
-      <div className="nav-pill">
-        {tabs.map(({ id, Icon }) => (
-          <button
-            key={id}
-            className={`nav-btn ${active === id ? "active" : ""}`}
-            onClick={() => setActive(id)}
-          >
-            <Icon size={21} />
-          </button>
-        ))}
+      <div className="nav-pill-wrap">
+        <div className="nav-pill">
+          {tabs.map(({ id, Icon }) => (
+            <button
+              key={id}
+              className={`nav-btn ${active === id ? "active" : ""}`}
+              onClick={() => setActive(id)}
+            >
+              <Icon size={21} />
+            </button>
+          ))}
+        </div>
+        <img src={scaleDownVine} alt="" className="vine-overlay vine-down" />
+        <img src={scaleUpVine} alt="" className="vine-overlay vine-up" />
       </div>
 
       <div className="nav-fab-wrap">

@@ -1,88 +1,122 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, Shield, Send, LogOut, Bell, Moon, Volume2, Edit3, ChevronRight } from 'lucide-react';
+import { User, Bell, Moon, Volume2, BookOpen, Shield, Send, LogOut, ChevronRight, Palette, Globe } from 'lucide-react';
 import TopBar from '../common/TopBar.jsx';
 import Toggle from '../common/Toggle.jsx';
+import AboutScreen from './AboutScreen.jsx';
+import PreferencesScreen from './PreferencesScreen.jsx';
+import PreferencesPage from './PreferencesPage.jsx';
 import { auth } from '../../utils/firebaseClient';
 
 export default function SettingsScreen({ darkMode, setDarkMode }) {
-  const [notifs,setNotifs] = useState(true);
-  const [sounds,setSounds] = useState(true);
+  const [notifs, setNotifs] = useState(true);
+  const [sounds, setSounds] = useState(true);
   const [user, setUser] = useState(null);
+  const [showAbout, setShowAbout] = useState(false);
+  const [showPreferencesScreen, setShowPreferencesScreen] = useState(false);
+  const [showPreferencesPage, setShowPreferencesPage] = useState(false);
 
   useEffect(() => {
-    // Get current user data from Firebase
     const currentUser = auth.currentUser;
     if (currentUser) {
       setUser({
         name: currentUser.displayName || 'My App',
+        email: currentUser.email || '',
         photoURL: currentUser.photoURL,
       });
     }
   }, []);
 
-  const prefs = [
-    { label:"Notifications", sub:"Scholarly alerts and reminders",       Icon:Bell,    val:notifs, set:setNotifs, bg:"#fff1e9", color:"var(--orange-m)" },
-    { label:"Dark Mode",     sub:"Midnight study session aesthetics",     Icon:Moon,    val:darkMode, set:setDarkMode, bg:"#fff1e9", color:"var(--orange-m)" },
-    { label:"Sound Effects", sub:"Tactile quill and parchment cues",      Icon:Volume2, val:sounds, set:setSounds, bg:"#fff1e9", color:"var(--orange-m)" },
+  const initial = (user?.name || 'R').charAt(0).toUpperCase();
+
+  const accountItems = [
+    { label: "Preferences", Icon: User, onClick: () => setShowPreferencesPage(true) },
+    { label: "Privacy Policy", Icon: Shield },
+    { label: "Send Feedback", Icon: Send },
   ];
 
-  const navItems = [
-    { label:"About Rumpel",   Icon:BookOpen, danger:false },
-    { label:"Privacy Policy", Icon:Shield,   danger:false },
-    { label:"Send Feedback",  Icon:Send,     danger:false },
-    { label:"Sign Out",       Icon:LogOut,   danger:true  },
+  const generalItems = [
+    { label: "Appearance", Icon: Palette, toggle: true, val: darkMode, set: setDarkMode },
+    { label: "Notifications", Icon: Bell, toggle: true, val: notifs, set: setNotifs },
+    { label: "Sound Effects", Icon: Volume2, toggle: true, val: sounds, set: setSounds },
   ];
+
+  const aboutItems = [
+    { label: "About Rumpel", Icon: BookOpen, onClick: () => setShowAbout(true) },
+    { label: "Language", Icon: Globe },
+  ];
+
+  const renderGroup = (label, items) => (
+    <div className="settings-group">
+      <div className="settings-group-label">{label}</div>
+      <div className="settings-group-card">
+        {items.map(({ label: rowLabel, Icon, toggle, val, set, danger, onClick }, i) => (
+          <div 
+            key={rowLabel} 
+            className={`settings-row${danger ? ' settings-row-danger' : ''}`}
+            onClick={onClick}
+          >
+            <div className="settings-row-icon"><Icon size={18} /></div>
+            <div className="settings-row-label">{rowLabel}</div>
+            {toggle ? (
+              <Toggle on={val} toggle={() => set(v => !v)} />
+            ) : (
+              <ChevronRight size={16} className="settings-row-chevron" />
+            )}
+            {i < items.length - 1 && <div className="settings-row-divider" />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (showAbout) {
+    return <AboutScreen onBack={() => setShowAbout(false)} />;
+  }
+
+  if (showPreferencesPage) {
+    return <PreferencesPage onBack={() => setShowPreferencesPage(false)} />;
+  }
+
+  if (showPreferencesScreen) {
+    return <PreferencesScreen onBack={() => setShowPreferencesScreen(false)} />;
+  }
 
   return (
     <>
-      <TopBar/>
+      <TopBar />
       <div className="scroll-content">
         <div className="settings-wrap">
-          {/* Profile - TEMPLATE: Customize user data below */}
-          <div className="profile-card">
-            <div className="profile-avatar-wrap">
-              <div className="profile-avatar">
-                {user?.photoURL ? (
-                  <img src={user.photoURL} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-                ) : (
-                  <span style={{fontSize:32,color:"var(--brown-m)",opacity:.5}}>!</span>
-                )}
-              </div>
-              <div className="profile-edit-btn"><Edit3 size={11} color="white"/></div>
+          {/* Profile Row */}
+          <div className="settings-profile-row" onClick={() => setShowPreferencesScreen(true)}>
+            <div className="settings-profile-avatar">
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="Profile" />
+              ) : (
+                <span className="settings-profile-initial">{initial}</span>
+              )}
             </div>
-            <div className="profile-name">{user?.name || 'My App'}</div>
-            <div className="profile-role">User · Level 1</div>
-            <div className="profile-bio">Welcome to your personal study companion.</div>
+            <div className="settings-profile-info">
+              <div className="settings-profile-name">{user?.name || 'My App'}</div>
+              {user?.email && <div className="settings-profile-email">{user.email}</div>}
+            </div>
+            <ChevronRight size={18} className="settings-row-chevron" />
           </div>
 
-          {/* General Preferences */}
-          <div className="settings-section-label">General Preferences</div>
-          <div className="settings-list">
-            {prefs.map(({label,sub,Icon,val,set,bg,color})=>(
-              <div key={label} className="settings-row">
-                <div className="settings-icon" style={{background:bg}}><Icon size={18} style={{color}}/></div>
-                <div className="settings-row-info">
-                  <div className="settings-row-title">{label}</div>
-                  <div className="settings-row-sub">{sub}</div>
-                </div>
-                <Toggle on={val} toggle={()=>set(v=>!v)}/>
+          {renderGroup("Account Settings", accountItems)}
+          {renderGroup("General Settings", generalItems)}
+          {renderGroup("About & More", aboutItems)}
+
+          {/* Sign Out */}
+          <div className="settings-group">
+            <div className="settings-group-card">
+              <div className="settings-row settings-row-danger" onClick={() => auth.signOut()}>
+                <div className="settings-row-icon"><LogOut size={18} /></div>
+                <div className="settings-row-label">Sign Out</div>
               </div>
-            ))}
+            </div>
           </div>
 
-          {/* Archive & Identity */}
-          <div className="settings-section-label">Archive &amp; Identity</div>
-          <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:20}}>
-            {navItems.map(({label,Icon,danger})=>(
-              <div key={label} className={`nav-row ${danger?"nav-row-danger":""}`}>
-                <div className="nav-row-icon"><Icon size={18}/></div>
-                <span className="nav-row-title">{label}</span>
-                <ChevronRight size={16} className="nav-row-arrow"/>
-              </div>
-            ))}
-          </div>
-
-          <div className="settings-version">Rumpel Manuscript V2.4.1</div>
+          <div className="settings-version">Rumpel v2.4.1</div>
         </div>
       </div>
     </>

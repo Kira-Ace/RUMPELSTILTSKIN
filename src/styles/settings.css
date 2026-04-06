@@ -5,200 +5,155 @@
   gap: 0; 
 }
 
-/* Profile Card */
-.profile-card { 
-  background: var(--bg-low); 
-  border-radius: 20px; 
-  padding: 28px 20px; 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  text-align: center; 
-  margin-bottom: 24px; 
-  position: relative; 
-  transition: background-color 0.7s ease; 
+/* Profile Row */
+.settings-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 16px;
+  background: var(--settings-row-bg);
+  border-radius: 14px;
+  margin-bottom: 24px;
+  cursor: pointer;
 }
 
-.profile-avatar-wrap { 
-  position: relative; 
-  margin-bottom: 14px; 
+.settings-profile-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--orange-m);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
-.profile-avatar { 
-  width: 80px; 
-  height: 80px; 
-  border-radius: 50%; 
-  background: var(--surface-hhi); 
-  border: 3px solid var(--yellow); 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  overflow: hidden; 
-  transition: background-color 0.7s ease, border-color 0.7s ease; 
+.settings-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
-.profile-edit-btn { 
-  position: absolute; 
-  bottom: 0; 
-  right: -4px; 
-  width: 26px; 
-  height: 26px; 
-  border-radius: 50%; 
-  background: var(--orange-m); 
-  border: 2px solid var(--bg); 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  cursor: pointer; 
-  transition: background-color 0.7s ease, border-color 0.7s ease; 
+.settings-profile-initial {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
 }
 
-.profile-name { 
-  font-family: 'Newsreader', serif; 
-  font-size: 22px; 
-  font-weight: 700; 
-  color: var(--orange); 
-  margin-bottom: 4px; 
-  transition: color 0.7s ease; 
+.settings-profile-info {
+  flex: 1;
+  min-width: 0;
 }
 
-.profile-role { 
+.settings-profile-name {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--brown);
+}
+
+.settings-profile-email {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 13px;
+  color: var(--outline);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Section Groups */
+.settings-group {
+  margin-bottom: 20px;
+}
+
+.settings-group-label { 
   font-family: 'Work Sans', sans-serif; 
-  font-size: 10px; 
-  font-weight: 700; 
-  letter-spacing: 1.5px; 
-  text-transform: uppercase; 
-  color: var(--brown-m); 
-  margin-bottom: 10px; 
-  transition: color 0.7s ease; 
-}
-
-.profile-bio { 
-  font-family: 'Noto Serif', serif; 
-  font-size: 13px; 
-  color: var(--brown-m); 
-  line-height: 1.55; 
-  transition: color 0.7s ease; 
-}
-
-/* Settings Section */
-.settings-section-label { 
-  font-family: 'Work Sans', sans-serif; 
-  font-size: 10px; 
-  font-weight: 700; 
-  letter-spacing: 1.8px; 
+  font-size: 12px; 
+  font-weight: 600; 
+  letter-spacing: 0.5px; 
   text-transform: uppercase; 
   color: var(--outline); 
-  margin-bottom: 10px; 
-  margin-top: 4px; 
-  transition: color 0.7s ease; 
+  margin-bottom: 8px; 
+  padding-left: 4px;
 }
 
-.settings-list { 
-  display: flex; 
-  flex-direction: column; 
-  gap: 10px; 
-  margin-bottom: 20px; 
+.settings-group-card {
+  background: var(--settings-row-bg);
+  border-radius: 14px;
+  overflow: hidden;
 }
 
+/* Rows inside group */
 .settings-row { 
-  background: var(--settings-row-bg); 
-  border-radius: 14px; 
   padding: 14px 16px; 
   display: flex; 
   align-items: center; 
   gap: 14px; 
-  transition: background-color 0.7s ease, color 0.7s ease; 
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.15s ease; 
 }
 
-.settings-icon { 
-  width: 36px; 
-  height: 36px; 
-  border-radius: 10px; 
+.settings-row:active {
+  background: var(--bg-dim);
+}
+
+.settings-row-icon { 
+  width: 28px;
+  height: 28px;
   display: flex; 
   align-items: center; 
   justify-content: center; 
   flex-shrink: 0; 
+  color: var(--orange);
 }
 
-.settings-row-info { 
-  flex: 1; 
-}
-
-.settings-row-title { 
+.settings-row-label { 
   font-family: 'Work Sans', sans-serif; 
   font-size: 15px; 
-  font-weight: 700; 
+  font-weight: 500; 
   color: var(--brown); 
-  transition: color 0.7s ease; 
+  flex: 1;
 }
 
-.settings-row-sub { 
-  font-family: 'Noto Serif', serif; 
-  font-size: 12px; 
-  color: var(--brown-m); 
-  margin-top: 1px; 
-  transition: color 0.7s ease; 
+.settings-row-chevron {
+  color: var(--outline);
+  flex-shrink: 0;
 }
 
-/* Navigation rows */
-.nav-row { 
-  background: var(--bg-low); 
-  border-radius: 14px; 
-  padding: 14px 16px; 
-  display: flex; 
-  align-items: center; 
-  gap: 14px; 
-  cursor: pointer; 
-  transition: background 0.7s ease, color 0.7s ease; 
+/* Divider between rows */
+.settings-row-divider {
+  position: absolute;
+  bottom: 0;
+  left: 56px;
+  right: 16px;
+  height: 1px;
+  background: var(--outline-v);
+  opacity: 0.4;
 }
 
-.nav-row:hover { 
-  background: var(--surface); 
+/* Danger row (Sign Out) */
+.settings-row-danger .settings-row-icon {
+  color: #ba1a1a;
 }
 
-.nav-row-icon { 
-  width: 36px; 
-  height: 36px; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  flex-shrink: 0; 
-  color: var(--orange); 
-  transition: color 0.7s ease; 
+.settings-row-danger .settings-row-label {
+  color: #ba1a1a;
+  font-weight: 600;
 }
 
-.nav-row-title { 
-  font-family: 'Newsreader', serif; 
-  font-style: italic; 
-  font-size: 17px; 
-  color: var(--brown); 
-  flex: 1; 
-  transition: color 0.7s ease; 
-}
-
-.nav-row-danger .nav-row-title { 
-  color: #ba1a1a; 
-  font-style: italic; 
-}
-
-.nav-row-danger { 
-  border: 1.5px dashed rgba(186, 26, 26, 0.25); 
-}
-
-.nav-row-arrow { 
-  color: var(--outline); 
-  transition: color 0.7s ease; 
-}
-
+/* Version */
 .settings-version { 
   text-align: center; 
   font-family: 'Work Sans', sans-serif; 
-  font-size: 10px; 
-  font-weight: 700; 
-  letter-spacing: 2px; 
-  text-transform: uppercase; 
+  font-size: 11px; 
+  font-weight: 500; 
+  letter-spacing: 1px; 
   color: var(--outline); 
-  padding: 20px 0 10px; 
-  transition: color 0.7s ease; 
+  padding: 12px 0 10px;
 }

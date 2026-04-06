@@ -21,7 +21,6 @@
   font-weight: 700; 
   color: var(--brown); 
   line-height: 1; 
-  transition: color 0.7s ease; 
 }
 
 .cal-arrow { 
@@ -35,7 +34,6 @@
   align-items: center; 
   justify-content: center; 
   color: var(--brown-m); 
-  transition: background 0.7s ease, color 0.7s ease; 
 }
 
 .cal-arrow:hover { 
@@ -58,7 +56,6 @@
   color: var(--outline); 
   letter-spacing: 0.3px; 
   line-height: 1; 
-  transition: color 0.7s ease; 
 }
 
 .day-name.active-col { 
@@ -117,7 +114,6 @@
   font-size: 16px; 
   font-weight: 600; 
   color: var(--brown-m); 
-  transition: background 0.7s ease, color 0.7s ease; 
 }
 
 .day-num.sel { 
@@ -173,7 +169,6 @@
   height: 1.5px; 
   background: var(--outline-v); 
   transform: translateY(-50%); 
-  transition: background-color 0.7s ease; 
 }
 
 .cal-pill { 
@@ -187,7 +182,6 @@
   display: flex; 
   align-items: center; 
   justify-content: center; 
-  transition: transform 0.7s ease, border-color 0.7s ease, background-color 0.7s ease; 
 }
 
 .cal-pill:hover { 
@@ -198,7 +192,6 @@
   color: var(--outline); 
   width: 12px; 
   height: 12px; 
-  transition: color 0.7s ease; 
 }
 
 .cal-pill:hover svg { 

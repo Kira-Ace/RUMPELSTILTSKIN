@@ -14,8 +14,11 @@ import {
 } from '../../utils/firebaseClient';
 import {
   createUserWithEmailAndPassword,
+  EmailAuthProvider,
+  linkWithCredential,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signOut,
   updateProfile,
 } from 'firebase/auth';
 
@@ -40,6 +43,7 @@ export default function LoginScreen({ onLogin }) {
   const [validationError, setValidationError] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ isValid: false, feedback: '' });
   const [attemptedPasswordSubmit, setAttemptedPasswordSubmit] = useState(false);
+  const [syncedEmail, setSyncedEmail] = useState('');
 
   const welcomePhrases = [
     'Welcome Back',
@@ -60,6 +64,41 @@ export default function LoginScreen({ onLogin }) {
 
   const steps = ['age', 'name', 'email', 'password'];
   const currentStep = mode === 'signup' ? steps[step] : null;
+  const hasSyncedEmail = Boolean(syncedEmail.trim());
+  const resolvedEmail = email.trim() || syncedEmail.trim();
+
+  const resetSignupState = () => {
+    setStep(0);
+    setPreviousStep(null);
+    setShowPassword(false);
+    setEmail('');
+    setPassword('');
+    setName('');
+    setAge('');
+    setIsTransitioning(false);
+    setIsStepTransitioning(false);
+    setValidationError('');
+    setPasswordStrength({ isValid: false, feedback: '' });
+    setAttemptedPasswordSubmit(false);
+    setSyncedEmail('');
+  };
+
+  const abandonSignup = async () => {
+    const shouldSignOutPendingOAuthUser = mode === 'signup' && hasSyncedEmail && auth.currentUser;
+
+    resetSignupState();
+    setMode(null);
+
+    if (shouldSignOutPendingOAuthUser) {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.error('Failed to clear pending OAuth signup:', err);
+      }
+    }
+  };
+
+  const isPasswordRequired = !hasSyncedEmail;
 
   const handleNext = () => {
     if (step < 3) {
@@ -70,8 +109,10 @@ export default function LoginScreen({ onLogin }) {
       setAttemptedPasswordSubmit(false); // Reset when moving to next step
     } else {
       // On final step, submit the signup
-      // Check if password is valid before submitting
-      if (!passwordStrength.isValid) {
+      const needsPassword = isPasswordRequired && !password.trim();
+      const hasInvalidPassword = Boolean(password.trim()) && !passwordStrength.isValid;
+
+      if (needsPassword || hasInvalidPassword) {
         setAttemptedPasswordSubmit(true);
         return;
       }
@@ -82,28 +123,66 @@ export default function LoginScreen({ onLogin }) {
   // Signup handler - create user in Firebase
   const handleSignup = async () => {
     try {
-      if (!email.trim() || !password.trim()) {
-        alert('Email and password are required');
+      if (!age.trim() || !name.trim()) {
+        alert('Age and name are required');
         return;
       }
 
-      // Create user with Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password.trim()
-      );
+      if (!hasSyncedEmail) {
+        if (!email.trim() || !password.trim()) {
+          alert('Age, name, email, and password are required');
+          return;
+        }
 
-      if (userCredential.user) {
-        // Update user profile with name
-        if (name.trim()) {
+        if (!validateEmail(email)) {
+          return;
+        }
+
+        // Create user with Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email.trim(),
+          password.trim()
+        );
+
+        if (userCredential.user) {
           await updateProfile(userCredential.user, {
             displayName: name.trim(),
           });
+
+          localStorage.setItem(`user_age_${userCredential.user.uid}`, age.trim());
+          onLogin();
         }
-        // User created successfully
-        onLogin();
+
+        return;
       }
+
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        alert('Please sync your email again before continuing.');
+        return;
+      }
+
+      if (email.trim() && !validateEmail(email)) {
+        return;
+      }
+
+      if (!resolvedEmail) {
+        alert('A synced email is required to finish signup.');
+        return;
+      }
+
+      if (password.trim()) {
+        const credential = EmailAuthProvider.credential(resolvedEmail, password.trim());
+        await linkWithCredential(currentUser, credential);
+      }
+
+      await updateProfile(currentUser, {
+        displayName: name.trim(),
+      });
+
+      localStorage.setItem(`user_age_${currentUser.uid}`, age.trim());
+      onLogin();
     } catch (err) {
       console.error('Signup error:', err);
       let errorMessage = 'An error occurred during signup. Please try again.';
@@ -114,42 +193,55 @@ export default function LoginScreen({ onLogin }) {
         errorMessage = 'Password is too weak. Please choose a stronger password.';
       } else if (err.code === 'auth/invalid-email') {
         errorMessage = 'Invalid email address.';
+      } else if (err.code === 'auth/provider-already-linked') {
+        errorMessage = 'This account already has an email sign-in method linked.';
+      } else if (err.code === 'auth/credential-already-in-use') {
+        errorMessage = 'That email/password combination is already linked to another account.';
       }
       
       alert(errorMessage);
     }
   };
 
-  const isNextDisabled = () => {
-    if (step === 0) return !age.trim();
-    if (step === 1) return false; // name is optional
-    if (step === 2) {
-      // Email is optional - always allow next
-      return false;
-    }
-    if (step === 3) {
-      // Password is optional - user can use OAuth instead
-      // But if they enter a password, email becomes required
-      if (password.trim() && !email.trim()) return true;
-      return false;
-    }
-    return true;
-  };
-
-  // Email validation (optional)
+  // Email validation
   const validateEmail = (emailValue) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    // If empty, that's OK since email is optional
-    if (!emailValue.trim()) {
-      setValidationError('');
-      return true;
+    const trimmedEmail = emailValue.trim();
+
+    if (!trimmedEmail) {
+      if (hasSyncedEmail) {
+        setValidationError('');
+        return true;
+      }
+
+      setValidationError('Email is required');
+      return false;
     }
-    // If provided, must be valid
-    if (!emailRegex.test(emailValue.trim())) {
+
+    if (!emailRegex.test(trimmedEmail)) {
       setValidationError('Please enter a valid email address');
       return false;
     }
+
     setValidationError('');
+    return true;
+  };
+
+  const isNextDisabled = () => {
+    if (step === 0) return !age.trim();
+    if (step === 1) return !name.trim();
+    if (step === 2) {
+      if (hasSyncedEmail && !email.trim()) return false;
+      return !email.trim() || Boolean(validationError);
+    }
+    if (step === 3) {
+      if (!password.trim()) {
+        return isPasswordRequired;
+      }
+
+      return false;
+    }
+
     return true;
   };
 
@@ -167,23 +259,23 @@ export default function LoginScreen({ onLogin }) {
     }
 
     if (passwordValue.length < 8) {
-      feedback.push('• At least 8 characters');
+      feedback.push('At least 8 characters');
       isValid = false;
     }
     if (!/[A-Z]/.test(passwordValue)) {
-      feedback.push('• At least one uppercase letter');
+      feedback.push('At least one uppercase letter');
       isValid = false;
     }
     if (!/[a-z]/.test(passwordValue)) {
-      feedback.push('• At least one lowercase letter');
+      feedback.push('At least one lowercase letter');
       isValid = false;
     }
     if (!/[0-9]/.test(passwordValue)) {
-      feedback.push('• At least one number');
+      feedback.push('At least one number');
       isValid = false;
     }
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(passwordValue)) {
-      feedback.push('• At least one special character (!@#$%^&*, etc.)');
+      feedback.push('At least one special character (!@#$%^&*, etc.)');
       isValid = false;
     }
 
@@ -237,18 +329,26 @@ export default function LoginScreen({ onLogin }) {
       const result = await signInWithPopup(auth, provider);
 
       if (result.user) {
-        // Update user profile with the name from signup if provided
-        // (OAuth displayName might be set, but override with our collected name if available)
+        if (mode === 'signup') {
+          const providerEmail = result.user.email || '';
+
+          setSyncedEmail(providerEmail);
+          setEmail((currentEmail) => currentEmail.trim() || providerEmail);
+          setName((currentName) => currentName.trim() || result.user.displayName || '');
+          setValidationError('');
+          return;
+        }
+
         if (name.trim()) {
           await updateProfile(result.user, {
             displayName: name.trim(),
           });
         }
-        // Store age in localStorage for later use
+
         if (age.trim()) {
           localStorage.setItem(`user_age_${result.user.uid}`, age);
         }
-        // Profile picture and email are automatically available from OAuth providers
+
         onLogin();
       }
     } catch (err) {
@@ -285,9 +385,10 @@ export default function LoginScreen({ onLogin }) {
 
           {/* Buttons */}
           <button
-            className="login-btn primary"
+            className="login-btn primary get-started-btn"
             onClick={() => {
               playButtonSound();
+              resetSignupState();
               setMode('signup');
               setStep(0);
             }}
@@ -335,18 +436,18 @@ export default function LoginScreen({ onLogin }) {
       <div className="login-screen signup-step">
         {/* Navigation Header */}
         <div className="signup-nav-header">
-          <button className="signup-nav-btn" onClick={() => {
+          <button className="signup-nav-btn" onClick={async () => {
             playButtonSound();
-            setMode(null);
+            await abandonSignup();
           }}>
             ‹
           </button>
           
           <div style={{ flex: 1 }}></div>
           
-          <button className="signup-nav-btn" onClick={() => {
+          <button className="signup-nav-btn" onClick={async () => {
             playButtonSound();
-            setMode(null);
+            await abandonSignup();
           }}>
             <X size={24} />
           </button>
@@ -477,15 +578,15 @@ export default function LoginScreen({ onLogin }) {
   const stepPlaceholders = {
     age: 'e.g., 25',
     name: 'Name goes here',
-    email: 'your.email@example.com (optional)',
-    password: 'Make it strong!'
+    email: hasSyncedEmail ? syncedEmail || 'Email already synced' : 'your.email@example.com',
+    password: hasSyncedEmail ? 'Optional: add a password for email sign-in' : 'Make it strong!'
   };
 
   return (
     <div className="login-screen signup-step">
       {/* Navigation Header with Progress Dashes */}
       <div className="signup-nav-header">
-        <button className="signup-nav-btn" onClick={() => {
+        <button className="signup-nav-btn" onClick={async () => {
           playButtonSound();
           if (step > 0) {
             setIsStepTransitioning(true);
@@ -494,7 +595,7 @@ export default function LoginScreen({ onLogin }) {
             setTimeout(() => setIsStepTransitioning(false), 300);
             setAttemptedPasswordSubmit(false); // Reset when going back
           } else {
-            setMode(null);
+            await abandonSignup();
           }
         }}>
           ‹
@@ -510,9 +611,9 @@ export default function LoginScreen({ onLogin }) {
           ))}
         </div>
         
-        <button className="signup-nav-btn" onClick={() => {
+        <button className="signup-nav-btn" onClick={async () => {
           playButtonSound();
-          setMode(null);
+          await abandonSignup();
         }}>
           <X size={24} />
         </button>
@@ -581,7 +682,7 @@ export default function LoginScreen({ onLogin }) {
               <div className={`password-strength-feedback ${attemptedPasswordSubmit && !passwordStrength.isValid ? 'invalid' : 'empty'}`}>
                 {attemptedPasswordSubmit && !passwordStrength.isValid ? (
                   passwordStrength.feedback.split('\n').map((line, i) => (
-                    <div key={i}>{line}</div>
+                    <div key={i} className="pw-feedback-item">{line}</div>
                   ))
                 ) : (
                   <div style={{ opacity: 0, pointerEvents: 'none' }}>•</div>
@@ -591,7 +692,7 @@ export default function LoginScreen({ onLogin }) {
           ) : (
             <div>
               <input
-                type={currentStep === 'age' ? 'number' : 'text'}
+                type={currentStep === 'age' ? 'number' : currentStep === 'email' ? 'email' : 'text'}
                 className="login-input signup-step-input"
                 placeholder={stepPlaceholders[currentStep]}
                 value={
