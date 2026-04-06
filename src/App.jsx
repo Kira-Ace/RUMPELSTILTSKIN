@@ -20,30 +20,26 @@ export default function App() {
   const [darkMode, setDarkMode] = useDarkMode();
 
   return (
-    <>
-      <div style={{display:"flex", justifyContent:"center", alignItems:"center", minHeight:"100vh", background:"#111"}}>
-        <div className={`phone ${darkMode ? 'dark-mode' : ''}`}>
-          {!done ? (
-            <SplashScreen onDone={() => setDone(true)}/>
-          ) : !loggedIn ? (
-            <LoginScreen onLogin={() => setLoggedIn(true)}/>
-          ) : (
-            <>
-              <div className={`screen ${tab === "home" ? "" : "hidden"}`}>
-                <HomeScreen tasks={tasks}/>
-              </div>
-              <div className={`screen ${tab === "calendar" ? "" : "hidden"}`}>
-                <CalendarScreen tasks={tasks} setTasks={setTasks}/>
-              </div>
-              <div className={`screen ${tab === "settings" ? "" : "hidden"}`}>
-                <SettingsScreen darkMode={darkMode} setDarkMode={setDarkMode}/>
-              </div>
-              <BottomNav active={tab} setActive={setTab} setChatModalOpen={setChatModalOpen}/>
-              <ChatModal isOpen={chatModalOpen} onClose={() => setChatModalOpen(false)}/>
-            </>
-          )}
-        </div>
-      </div>
-    </>
+    <div className={`phone ${darkMode ? 'dark-mode' : ''}`}>
+      {!done ? (
+        <SplashScreen onDone={() => setDone(true)}/>
+      ) : !loggedIn ? (
+        <LoginScreen onLogin={() => setLoggedIn(true)}/>
+      ) : (
+        <>
+          <div className={`screen ${tab === "home" ? "" : "hidden"}`}>
+            <HomeScreen tasks={tasks}/>
+          </div>
+          <div className={`screen ${tab === "calendar" ? "" : "hidden"}`}>
+            <CalendarScreen tasks={tasks} setTasks={setTasks}/>
+          </div>
+          <div className={`screen ${tab === "settings" ? "" : "hidden"}`}>
+            <SettingsScreen darkMode={darkMode} setDarkMode={setDarkMode}/>
+          </div>
+          <BottomNav active={tab} setActive={setTab} setChatModalOpen={setChatModalOpen}/>
+          <ChatModal isOpen={chatModalOpen} onClose={() => setChatModalOpen(false)}/>
+        </>
+      )}
+    </div>
   );
 }

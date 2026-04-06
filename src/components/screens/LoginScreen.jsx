@@ -5,6 +5,10 @@ import rumpelText from '../assets/rumpeltext.png';
 import googleLogo from '../assets/google.svg';
 import facebookLogo from '../assets/facebook.svg';
 import microsoftLogo from '../assets/microsoft.svg';
+import buttonSound from '../assets/button.mp3';
+import buttonSound2 from '../assets/button2.mp3';
+import buttonSound3 from '../assets/button3.mp3';
+import buttonSound4 from '../assets/button4.mp3';
 import '../../styles/login.css';
 import {
   auth,
@@ -22,10 +26,29 @@ import {
   updateProfile,
 } from 'firebase/auth';
 
-const playButtonSound = () => {
-  const audio = new Audio('/RUMPELSTILTSKIN/assets/button.mp3');
+const buttonSounds = [
+  new Audio(buttonSound),
+  new Audio(buttonSound2),
+  new Audio(buttonSound3),
+  new Audio(buttonSound4),
+];
+
+buttonSounds.forEach(audio => {
   audio.volume = 0.3;
-  audio.play().catch(() => {});
+  audio.preload = 'auto';
+});
+
+let lastSoundIndex = -1;
+
+const playButtonSound = () => {
+  let nextIndex;
+  do {
+    nextIndex = Math.floor(Math.random() * buttonSounds.length);
+  } while (nextIndex === lastSoundIndex);
+  
+  lastSoundIndex = nextIndex;
+  buttonSounds[nextIndex].currentTime = 0;
+  buttonSounds[nextIndex].play().catch(() => {});
 };
 
 export default function LoginScreen({ onLogin }) {

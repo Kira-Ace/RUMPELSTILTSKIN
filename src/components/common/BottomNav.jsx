@@ -35,6 +35,7 @@ export default function BottomNav({ active, setActive, setChatModalOpen }) {
     <div className="bottom-nav">
       <div className="nav-pill-wrap">
         <div className="nav-pill">
+          <img src={scaleDownVine} alt="" className="vine-overlay vine-down" />
           {tabs.map(({ id, Icon }) => (
             <button
               key={id}
@@ -45,7 +46,6 @@ export default function BottomNav({ active, setActive, setChatModalOpen }) {
             </button>
           ))}
         </div>
-        <img src={scaleDownVine} alt="" className="vine-overlay vine-down" />
         <img src={scaleUpVine} alt="" className="vine-overlay vine-up" />
       </div>
 

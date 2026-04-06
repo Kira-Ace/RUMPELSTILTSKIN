@@ -377,28 +377,25 @@ export default function CalendarScreen({ tasks, setTasks }) {
             const tagColors = {"Math": "#5B8DEE", "Science":"#EA4335", "English":"#FBBC04", "History":"#34A853", "Other":"#FA7B17"};
             const tagColor = tagColors[t.tag] || "#9E9E9E";
             return (
-              <div key={t.id} className="task-card-new">
+              <div key={t.id} className={`task-card ${t.accent ? "accent" : ""}`}>
                 <div className="task-indicator" style={{background: tagColor}}/>
                 <div className="task-content">
-                  <div className="task-title-row">
-                    <div className="task-title-new">{t.title}</div>
-                    <div className="task-actions">
-                      <button onClick={() => startEdit(t)} style={{background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--brown-m)"}}>
-                        <Edit3 size={18}/>
-                      </button>
-                      <button onClick={() => deleteTask(t.id)} style={{background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center", justifyContent:"center", transition:"transform 0.1s", color:"var(--outline)", opacity:0.6}} onMouseDown={(e) => {e.currentTarget.style.transform = "scale(0.85)"}} onMouseUp={(e) => {e.currentTarget.style.transform = "scale(1)"}} onMouseLeave={(e) => {e.currentTarget.style.transform = "scale(1)"}}>
-                        <Trash2 size={18}/>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="task-divider-line"/>
-                  {t.desc && <div className="task-desc-new">{t.desc}</div>}
-                  {t.time && <div className="task-time-new">{t.time}</div>}
+                  <div className="task-title">{t.title}</div>
+                  {t.desc && <div className="task-desc">{t.desc}</div>}
+                  {t.time && <div className="task-time">{t.time}</div>}
+                </div>
+                <div className="task-actions">
+                  <button onClick={() => startEdit(t)} style={{background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--brown-m)"}}>
+                    <Edit3 size={18}/>
+                  </button>
+                  <button onClick={() => deleteTask(t.id)} style={{background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center", justifyContent:"center", transition:"transform 0.1s", color:"var(--outline)", opacity:0.6}} onMouseDown={(e) => {e.currentTarget.style.transform = "scale(0.85)"}} onMouseUp={(e) => {e.currentTarget.style.transform = "scale(1)"}} onMouseLeave={(e) => {e.currentTarget.style.transform = "scale(1)"}}>
+                    <Trash2 size={18}/>
+                  </button>
                 </div>
               </div>
             );
           })}
-          <button className="add-task-btn" onClick={() => {setEditingId(null); setNewTask({title:"", time:"", desc:"", tag:"Other"}); openModal(); setModalMessage(getRandomMessage());}}>
+          <button className="add-task-btn" onClick={() => {setEditingId(null); setNewTask({title:"", time:"8:00 AM", desc:"", tag:"Other"}); openModal(); setModalMessage(getRandomMessage());}}>
             <Plus size={15}/> Add task
           </button>
         </div>
