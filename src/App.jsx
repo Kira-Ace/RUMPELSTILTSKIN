@@ -10,7 +10,6 @@ import CalendarScreen from './components/screens/CalendarScreen.jsx';
 import SettingsScreen from './components/screens/SettingsScreen.jsx';
 import { initialTasks, TODAY } from './utils/constants.js';
 import { useDarkMode } from './hooks/useDarkMode.js';
-import { supabase } from './utils/supabaseClient.js';
 
 export default function App() {
   const [done, setDone] = useState(false);
@@ -19,33 +18,6 @@ export default function App() {
   const [tasks, setTasks] = useState(initialTasks);
   const [chatModalOpen, setChatModalOpen] = useState(false);
   const [darkMode, setDarkMode] = useDarkMode();
-
-  // Check for OAuth session on mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (data?.session && !error) {
-          setLoggedIn(true);
-          setDone(true);
-        }
-      } catch (err) {
-        console.log('No active session:', err);
-      }
-    };
-
-    checkAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        setLoggedIn(true);
-        setDone(true);
-      }
-    });
-
-    return () => subscription?.unsubscribe();
-  }, []);
 
   return (
     <>

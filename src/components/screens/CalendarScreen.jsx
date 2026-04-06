@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Edit3, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Edit3, Trash2, Inbox, X, Calendar, Flag, ChevronDown, MoreVertical } from 'lucide-react';
 import TopBar from '../common/TopBar.jsx';
 import { TODAY, MONTHS, DAYS } from '../../utils/constants.js';
 import { 
@@ -18,6 +18,11 @@ export default function CalendarScreen({ tasks, setTasks }) {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [newTask, setNewTask] = useState({title:"", time:"", desc:"", tag:"Other"});
+  const [selectedInbox, setSelectedInbox] = useState("Inbox");
+  const [showDateMenu, setShowDateMenu] = useState(false);
+  const [dateNameEdited, setDateNameEdited] = useState(false);
+  const [editingDateName, setEditingDateName] = useState(false);
+  const [customDateName, setCustomDateName] = useState("");
   const [pillY, setPillY] = useState(null);
   const [pillDelta, setPillDelta] = useState(0);
   const [anim, setAnim] = useState("");
@@ -219,9 +224,41 @@ export default function CalendarScreen({ tasks, setTasks }) {
         <div className="sel-date-header">
           <div className="sel-date-left">
             <span className="sel-day-num">{sel.d}</span>
-            <span className="sel-day-name">{dowName(sel)}</span>
+            {editingDateName ? (
+              <input 
+                type="text"
+                className="sel-day-name-input"
+                value={customDateName}
+                onChange={e => setCustomDateName(e.target.value)}
+                onBlur={() => {
+                  setEditingDateName(false);
+                  if(customDateName) setDateNameEdited(true);
+                }}
+                autoFocus
+              />
+            ) : (
+              <span className="sel-day-name">{customDateName || dowName(sel)}</span>
+            )}
+            {dateNameEdited && <div className="sel-date-divider"/>}
           </div>
-          <div className="sel-date-right">
+          <div className="sel-date-horizontal-line"/>
+          <div style={{position: "relative"}}>
+            <button 
+              className="sel-date-menu-btn"
+              onClick={() => setShowDateMenu(!showDateMenu)}
+            >
+              <MoreVertical size={20}/>
+            </button>
+            {showDateMenu && (
+              <div className="sel-date-menu-popover">
+                <button className="sel-date-menu-item" onClick={() => {setShowModal(true); setShowDateMenu(false);}}>
+                  Create task
+                </button>
+                <button className="sel-date-menu-item" onClick={() => {setEditingDateName(true); setShowDateMenu(false);}}>
+                  Edit datename
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -255,18 +292,46 @@ export default function CalendarScreen({ tasks, setTasks }) {
 
       {showModal && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="modal-sheet">
-            <div className="modal-handle"/>
-            <div className="modal-title">{editingId ? "Edit Task" : "New Task"} — {dowName(sel)} {MONTHS[sel.m].slice(0,3)} {sel.d}</div>
-            <input className="modal-input" placeholder="Task title…" value={newTask.title} onChange={e => setNewTask(p => ({...p, title:e.target.value}))}/>
-            <input className="modal-input" placeholder="Time (e.g. 14:00)" value={newTask.time} onChange={e => setNewTask(p => ({...p, time:e.target.value}))}/>
-            <input className="modal-input" placeholder="Description (optional)" value={newTask.desc} onChange={e => setNewTask(p => ({...p, desc:e.target.value}))}/>
-            <select className="modal-input" value={newTask.tag} onChange={e => setNewTask(p => ({...p, tag:e.target.value}))}>
-              {["Math","Science","English","History","Other"].map(t => <option key={t}>{t}</option>)}
-            </select>
-            <div className="modal-btns">
-              <button className="modal-btn secondary" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="modal-btn primary" onClick={addTask}>{editingId ? "Save" : "Add"} Task</button>
+          <div className="new-task-modal">
+            {/* Top Row: Inbox selector + Close button */}
+            <div className="modal-top-row">
+              <div className="inbox-selector">
+                <Inbox size={20} style={{color: "var(--brown)"}}/>
+                <span>{selectedInbox}</span>
+                <ChevronDown size={18} style={{color: "var(--brown-m)"}}/>
+              </div>
+              <button 
+                className="modal-close-btn"
+                onClick={() => setShowModal(false)}
+              >
+                <X size={20}/>
+              </button>
+            </div>
+
+            {/* Middle: Large text input */}
+            <input 
+              className="modal-task-title-input"
+              type="text"
+              placeholder="New Task"
+              value={newTask.title}
+              onChange={e => setNewTask(p => ({...p, title: e.target.value}))}
+            />
+
+            {/* Bottom Row: Date + Flag + Create button */}
+            <div className="modal-bottom-row">
+              <div className="modal-date-info">
+                <Calendar size={18} style={{color: "var(--brown)"}}/>
+                <span>{sel.d} {MONTHS[sel.m].slice(0,3)}</span>
+              </div>
+              <button className="modal-flag-btn">
+                <Flag size={18} style={{color: "var(--brown-m)"}}/>
+              </button>
+              <button 
+                className="modal-create-btn"
+                onClick={() => {addTask(); setShowModal(false);}}
+              >
+                Create
+              </button>
             </div>
           </div>
         </div>
