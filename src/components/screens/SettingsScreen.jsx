@@ -19,7 +19,7 @@ export default function SettingsScreen({ darkMode, setDarkMode }) {
     const currentUser = auth.currentUser;
     if (currentUser) {
       setUser({
-        name: currentUser.displayName || 'My App',
+        name: currentUser.displayName || 'Guest',
         email: currentUser.email || '',
         photoURL: currentUser.photoURL,
       });

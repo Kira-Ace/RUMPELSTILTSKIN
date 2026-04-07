@@ -19,13 +19,6 @@ const SNAP_MAX = 0.92;   // expanded
 
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
-let nextChatId = 1;
-let nextPendingMessageId = 1;
-
-function makeChat() {
-  return { id: nextChatId++, title: "New Chat", messages: [] };
-}
-
 /** Ask Gemini to generate a short title for the conversation */
 async function generateTitle(messages) {
   try {
@@ -43,10 +36,21 @@ async function generateTitle(messages) {
 }
 
 export default function ChatModal({ isOpen, onClose }) {
+  const nextChatIdRef = useRef(1);
+  const nextMessageIdRef = useRef(1);
+
+  const createChat = () => ({ id: nextChatIdRef.current++, title: "New Chat", messages: [] });
+  const createMessageId = (prefix = "msg") => `${prefix}-${nextMessageIdRef.current++}`;
+
+  const initialChatRef = useRef(null);
+  if (!initialChatRef.current) {
+    initialChatRef.current = createChat();
+  }
+
   const [isRendered, setIsRendered] = useState(isOpen);
   const [isClosing, setIsClosing] = useState(false);
-  const [chats, setChats] = useState(() => [makeChat()]);
-  const [activeChatId, setActiveChatId] = useState(1);
+  const [chats, setChats] = useState(() => [initialChatRef.current]);
+  const [activeChatId, setActiveChatId] = useState(() => initialChatRef.current.id);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
@@ -62,10 +66,10 @@ export default function ChatModal({ isOpen, onClose }) {
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0];
   const messages = activeChat?.messages || [];
 
-  const setMessages = (updater) => {
+  const setMessages = (updater, chatId = activeChatId) => {
     setChats((prev) =>
       prev.map((c) =>
-        c.id === activeChatId
+        c.id === chatId
           ? { ...c, messages: typeof updater === "function" ? updater(c.messages) : updater }
           : c
       )
@@ -167,6 +171,12 @@ export default function ChatModal({ isOpen, onClose }) {
     };
   }, [isDragging, onDragMove, onDragEnd]);
 
+  useEffect(() => {
+    if (!chats.some((chat) => chat.id === activeChatId) && chats.length > 0) {
+      setActiveChatId(chats[0].id);
+    }
+  }, [chats, activeChatId]);
+
   /* ---- file attachment ---- */
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files || []);
@@ -207,12 +217,15 @@ export default function ChatModal({ isOpen, onClose }) {
     setSuggestionsSliding(false);
 
     const requestText = userMessage || "Describe the attached file(s).";
+    const chatIdAtSend = activeChatId;
+    const chatAtSend = chats.find((c) => c.id === chatIdAtSend);
     const userEntry = {
+      id: createMessageId("user"),
       role: "user",
       text: userMessage || `📎 ${currentAttachments.map((a) => a.name).join(", ")}`,
       attachments: currentAttachments,
     };
-    const pendingId = `pending-${nextPendingMessageId++}`;
+    const pendingId = createMessageId("assistant-pending");
     const pendingEntry = {
       id: pendingId,
       role: "assistant",
@@ -222,9 +235,9 @@ export default function ChatModal({ isOpen, onClose }) {
 
     // Build history including the new user message for the API call
     // (React state `messages` is stale inside this closure)
-    const historyForApi = [...messages, userEntry];
+    const historyForApi = [...(chatAtSend?.messages || []), userEntry];
 
-    setMessages((prev) => [...prev, userEntry, pendingEntry]);
+    setMessages((prev) => [...prev, userEntry, pendingEntry], chatIdAtSend);
     setLoading(true);
     if (sheetHeight < SNAP_MID) setSheetHeight(SNAP_MID);
 
@@ -237,17 +250,16 @@ export default function ChatModal({ isOpen, onClose }) {
       setMessages((prev) => {
         const updated = prev.map((message) => (
           message.id === pendingId
-            ? { role: "assistant", text: responseText }
+            ? { ...message, role: "assistant", text: responseText, pending: false }
             : message
         ));
-
-        // Auto-generate title after first assistant reply
-        if (activeChat.title === "New Chat" && updated.filter((m) => m.role === "assistant").length === 1) {
-          const chatId = activeChatId;
-          generateTitle(updated).then((t) => setChatTitle(chatId, t));
-        }
         return updated;
-      });
+      }, chatIdAtSend);
+
+      const messagesForTitle = [...historyForApi, { id: pendingId, role: "assistant", text: responseText }];
+      if ((chatAtSend?.title || "New Chat") === "New Chat" && messagesForTitle.filter((m) => m.role === "assistant").length === 1) {
+        generateTitle(messagesForTitle).then((t) => setChatTitle(chatIdAtSend, t));
+      }
     } catch (err) {
       console.error(err);
       let errorMsg = err.message || "Failed to connect";
@@ -261,16 +273,16 @@ export default function ChatModal({ isOpen, onClose }) {
       
       setMessages((prev) => prev.map((message) => (
         message.id === pendingId
-          ? { role: "assistant", text: `Error: ${errorMsg}` }
+          ? { ...message, role: "assistant", text: `Error: ${errorMsg}`, pending: false }
           : message
-      )));
+      )), chatIdAtSend);
     } finally {
       setLoading(false);
     }
   };
 
   const handleNewChat = () => {
-    const fresh = makeChat();
+    const fresh = createChat();
     setChats((prev) => [fresh, ...prev]);
     setActiveChatId(fresh.id);
     setInput("");
@@ -290,17 +302,11 @@ export default function ChatModal({ isOpen, onClose }) {
     setChats((prev) => {
       const remaining = prev.filter((c) => c.id !== id);
       if (remaining.length === 0) {
-        const fresh = makeChat();
+        const fresh = createChat();
         return [fresh];
       }
       return remaining;
     });
-    if (id === activeChatId) {
-      setChats((prev) => {
-        setActiveChatId(prev[0].id);
-        return prev;
-      });
-    }
   };
 
   const handleSuggestion = (label) => {
@@ -423,7 +429,7 @@ export default function ChatModal({ isOpen, onClose }) {
         {/* Messages */}
         <div className="chat-modal-messages" ref={messagesContainerRef}>
           {messages.map((msg, idx) => (
-            <div key={msg.id || idx} className={`chat-message chat-message-${msg.role}`}>
+            <div key={msg.id || `legacy-${idx}`} className={`chat-message chat-message-${msg.role}`}>
               {msg.role === "assistant" && (
                 <img src={rumpelIcon} alt="Rumpel" className="chat-avatar" />
               )}

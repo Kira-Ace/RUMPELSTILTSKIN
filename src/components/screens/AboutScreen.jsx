@@ -49,7 +49,6 @@ export default function AboutScreen({ onBack }) {
               <div className="about-tech-item">Vite</div>
               <div className="about-tech-item">Firebase</div>
               <div className="about-tech-item">Google Gemini API</div>
-              <div className="about-tech-item">Supabase</div>
             </div>
           </div>
 
