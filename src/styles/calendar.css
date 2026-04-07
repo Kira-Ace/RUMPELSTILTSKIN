@@ -509,3 +509,67 @@
   flex-shrink: 0;
   vertical-align: middle;
 }
+
+.calendar-static-page {
+  display: flex;
+  flex: 1;
+  padding: 0 20px 120px;
+}
+
+.calendar-static-card {
+  width: 100%;
+  margin-top: 16px;
+  border: 1.5px solid var(--outline-v);
+  border-radius: 18px;
+  padding: 20px;
+  background: linear-gradient(165deg, var(--bg), var(--bg-low));
+}
+
+.calendar-static-eyebrow {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--outline);
+}
+
+.calendar-static-title {
+  margin-top: 8px;
+  font-family: 'Newsreader', serif;
+  font-size: 30px;
+  line-height: 1.05;
+  color: var(--brown);
+}
+
+.calendar-static-copy {
+  margin-top: 10px;
+  font-family: 'Noto Serif', serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--brown-m);
+}
+
+.calendar-static-date {
+  margin-top: 18px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-top: 1px solid var(--outline-v);
+  padding-top: 14px;
+}
+
+.calendar-static-day {
+  font-family: 'Newsreader', serif;
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--orange-m);
+  line-height: 1;
+}
+
+.calendar-static-month {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brown-m);
+}

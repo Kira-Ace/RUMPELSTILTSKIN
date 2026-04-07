@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Edit3, Trash2, X, Calendar, ChevronDown, MoreVertical } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Edit3, Trash2, X, Calendar, MoreVertical } from 'lucide-react';
 import TopBar from '../common/TopBar.jsx';
 import DrumRoller from '../common/DrumRoller.jsx';
-import { TODAY, MONTHS, DAYS } from '../../utils/constants.js';
+import { TODAY, MONTHS, DAYS, RUMPEL_NERF_CALENDAR } from '../../utils/constants.js';
 import { 
   buildMonthGrid, 
   getWeekCells, 
@@ -69,7 +69,32 @@ function TimeDrumPicker({ time, onChange }) {
   );
 }
 
+function StaticCalendarPage() {
+  return (
+    <>
+      <TopBar/>
+      <div className="calendar-static-page">
+        <div className="calendar-static-card">
+          <div className="calendar-static-eyebrow">Calendar</div>
+          <div className="calendar-static-title">Calendar features are disabled</div>
+          <div className="calendar-static-copy">
+            This page is currently static because RUMPEL_NERF_CALENDAR is set to 1.
+          </div>
+          <div className="calendar-static-date">
+            <span className="calendar-static-day">{TODAY.d}</span>
+            <span className="calendar-static-month">{MONTHS[TODAY.m]} {TODAY.y}</span>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function CalendarScreen({ tasks, setTasks, googleToken, onTokenExpired }) {
+  if (RUMPEL_NERF_CALENDAR) {
+    return <StaticCalendarPage/>;
+  }
+
   const [sel, setSel] = useState({...TODAY});
   const [view, setView] = useState({y:TODAY.y, m:TODAY.m});
   const [expanded, setExpanded] = useState(false);

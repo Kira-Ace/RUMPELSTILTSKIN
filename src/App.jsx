@@ -8,7 +8,7 @@ import LoginScreen from './components/screens/LoginScreen.jsx';
 import HomeScreen from './components/screens/HomeScreen.jsx';
 import CalendarScreen from './components/screens/CalendarScreen.jsx';
 import SettingsScreen from './components/screens/SettingsScreen.jsx';
-import { initialTasks, TODAY } from './utils/constants.js';
+import { initialTasks, RUMPEL_NERF_CALENDAR } from './utils/constants.js';
 import { useDarkMode } from './hooks/useDarkMode.js';
 import { auth, googleProvider } from './utils/firebaseClient';
 import { onAuthStateChanged, signOut, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
@@ -28,6 +28,13 @@ export default function App() {
       setLoggedIn(!!user);
       setAuthChecked(true);
       if (user) {
+        if (RUMPEL_NERF_CALENDAR) {
+          setGoogleToken(null);
+          localStorage.removeItem('google_access_token');
+          localStorage.removeItem('google_token_expiry');
+          return;
+        }
+
         const stored = localStorage.getItem('google_access_token');
         const expiry = localStorage.getItem('google_token_expiry');
         if (stored && expiry && Date.now() < Number(expiry)) {
@@ -51,16 +58,22 @@ export default function App() {
             });
           }
         }
+      } else {
+        setGoogleToken(null);
       }
     });
     return unsub;
   }, []);
 
   const handleLogin = (accessToken) => {
-    if (accessToken) {
+    if (!RUMPEL_NERF_CALENDAR && accessToken) {
       setGoogleToken(accessToken);
       localStorage.setItem('google_access_token', accessToken);
       localStorage.setItem('google_token_expiry', String(Date.now() + 3600000));
+    } else if (RUMPEL_NERF_CALENDAR) {
+      setGoogleToken(null);
+      localStorage.removeItem('google_access_token');
+      localStorage.removeItem('google_token_expiry');
     }
     setLoggedIn(true);
   };

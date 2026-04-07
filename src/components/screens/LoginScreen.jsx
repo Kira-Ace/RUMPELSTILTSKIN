@@ -10,6 +10,7 @@ import buttonSound2 from '../assets/button2.mp3';
 import buttonSound3 from '../assets/button3.mp3';
 import buttonSound4 from '../assets/button4.mp3';
 import '../../styles/login.css';
+import { RUMPEL_NERF_CALENDAR } from '../../utils/constants.js';
 import {
   auth,
   googleProvider,
@@ -416,7 +417,7 @@ export default function LoginScreen({ onLogin }) {
 
         // Extract Google access token for Calendar API
         let googleAccessToken = null;
-        if (provider === googleProvider) {
+        if (provider === googleProvider && !RUMPEL_NERF_CALENDAR) {
           const credential = GoogleAuthProvider.credentialFromResult(result);
           if (credential) {
             googleAccessToken = credential.accessToken;
