@@ -3,10 +3,21 @@
  * The backend owns Gemini-specific request shaping and model selection.
  */
 
+import { CHAT_SYSTEM_PROMPT } from './constants.js';
+
 const API_PROXY = (import.meta.env.VITE_API_PROXY || 'http://localhost:3001').replace(/\/$/, '');
 
 function normalizeMode(mode) {
   return mode === 'fast' || mode === 'auto' ? mode : 'default';
+}
+
+function normalizeSystemPrompt(systemPrompt) {
+  if (typeof systemPrompt !== 'string') {
+    return CHAT_SYSTEM_PROMPT;
+  }
+
+  const trimmed = systemPrompt.trim();
+  return trimmed || CHAT_SYSTEM_PROMPT;
 }
 
 function normalizeAttachments(attachments = []) {
@@ -70,13 +81,17 @@ async function callChatApi(payload) {
  * @param {string} [config.mode] - "fast" | "auto" | "default"
  * @param {Array} [config.attachments] - file attachments [{name,mime,data}]
  * @param {string} [config.purpose] - "chat" | "title"
+ * @param {string} [config.systemPrompt] - optional system prompt override
  */
 export async function callGeminiChat(messages, userMessage, config = {}) {
+  const purpose = config.purpose === 'title' ? 'title' : 'chat';
+
   return callChatApi({
     messages: normalizeMessages(messages),
     userMessage: typeof userMessage === 'string' ? userMessage : '',
     attachments: normalizeAttachments(config.attachments),
     mode: normalizeMode(config.mode),
-    purpose: config.purpose === 'title' ? 'title' : 'chat',
+    purpose,
+    systemPrompt: purpose === 'chat' ? normalizeSystemPrompt(config.systemPrompt) : '',
   });
 }

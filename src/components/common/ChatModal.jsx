@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { X, Menu, ChevronDown, Plus, Zap, Circle, Loader2, Send, FileText, Search, LayoutGrid, Paperclip, Image as ImageIcon, XCircle, MessageSquare, Trash2, Pencil, Check } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import rumpelIcon from "../assets/rumpel.png";
 import { callGeminiChat } from "../../utils/geminiApi.js";
 import "../../styles/chatmodal.css";
@@ -18,6 +20,8 @@ const SNAP_MID = 0.62;   // default
 const SNAP_MAX = 0.92;   // expanded
 
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+const MARKDOWN_PLUGINS = [remarkGfm];
 
 /** Ask Gemini to generate a short title for the conversation */
 async function generateTitle(messages) {
@@ -443,7 +447,18 @@ export default function ChatModal({ isOpen, onClose }) {
                     ))}
                   </div>
                 )}
-                {msg.pending ? <Loader2 size={18} className="spin" /> : msg.text}
+                {msg.pending ? <Loader2 size={18} className="spin" /> : (
+                  <div className="chat-markdown">
+                    <ReactMarkdown
+                      remarkPlugins={MARKDOWN_PLUGINS}
+                      components={{
+                        a: (props) => <a {...props} target="_blank" rel="noreferrer noopener" />,
+                      }}
+                    >
+                      {msg.text || ""}
+                    </ReactMarkdown>
+                  </div>
+                )}
               </div>
             </div>
           ))}

@@ -78,6 +78,10 @@ function normalizePurpose(purpose) {
   return VALID_PURPOSES.has(purpose) ? purpose : 'chat';
 }
 
+function normalizeSystemPrompt(systemPrompt) {
+  return typeof systemPrompt === 'string' ? systemPrompt.trim() : '';
+}
+
 function getAttachmentParts(attachments = []) {
   return attachments.flatMap((attachment) => {
     if (!attachment || typeof attachment.mime !== 'string' || typeof attachment.data !== 'string') {
@@ -241,7 +245,7 @@ app.get('/health', (req, res) => {
 /**
  * POST /api/chat
  * Server-owned chat endpoint.
- * Body: { messages, userMessage, attachments, mode, purpose }
+ * Body: { messages, userMessage, attachments, mode, purpose, systemPrompt }
  */
 app.post('/api/chat', async (req, res) => {
   if (!API_KEY) {
@@ -254,6 +258,7 @@ app.post('/api/chat', async (req, res) => {
     attachments = [],
     mode = 'default',
     purpose = 'chat',
+    systemPrompt = '',
   } = req.body || {};
 
   if (!Array.isArray(messages) || !Array.isArray(attachments)) {
@@ -264,6 +269,10 @@ app.post('/api/chat', async (req, res) => {
     return res.status(400).json({ error: 'User message must be a string' });
   }
 
+  if (typeof systemPrompt !== 'string') {
+    return res.status(400).json({ error: 'System prompt must be a string' });
+  }
+
   if (!userMessage.trim() && attachments.length === 0) {
     return res.status(400).json({ error: 'Missing user message or attachments' });
   }
@@ -271,6 +280,7 @@ app.post('/api/chat', async (req, res) => {
   try {
     const normalizedMode = normalizeMode(mode);
     const normalizedPurpose = normalizePurpose(purpose);
+    const normalizedSystemPrompt = normalizeSystemPrompt(systemPrompt);
     const contents = buildContents(messages, userMessage, attachments);
 
     if (!contents.length) {
@@ -279,7 +289,13 @@ app.post('/api/chat', async (req, res) => {
 
     const models = getModelsForMode(normalizedMode, userMessage, normalizedPurpose);
     const generationConfig = getGenerationConfig(normalizedMode, userMessage, normalizedPurpose);
-    const result = await callGeminiWithFallback({ contents, generationConfig }, models);
+    const payload = { contents, generationConfig };
+
+    if (normalizedPurpose === 'chat' && normalizedSystemPrompt) {
+      payload.systemInstruction = { parts: [{ text: normalizedSystemPrompt }] };
+    }
+
+    const result = await callGeminiWithFallback(payload, models);
 
     res.json(result);
   } catch (err) {
