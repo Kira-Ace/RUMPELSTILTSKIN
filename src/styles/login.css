@@ -408,16 +408,16 @@ input[type="number"] {
 }
 
 .login-social-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   fill: currentColor;
   stroke: currentColor;
 }
-112c0a4007a83c6a24a681a1d1078fe2
+
 .login-social-btn img {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   object-fit: contain;
 }

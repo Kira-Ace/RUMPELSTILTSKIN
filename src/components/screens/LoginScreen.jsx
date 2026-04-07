@@ -161,6 +161,15 @@ export default function LoginScreen({ onLogin }) {
           return;
         }
 
+        // Check if email already exists before creating account
+        const emailExists = await checkEmailExists(email.trim());
+        if (emailExists) {
+          alert('This email is already in use. Please use a different email or sign in with that account.');
+          setEmail('');
+          setSyncedEmail('');
+          return;
+        }
+
         // Create user with Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(
           auth,
@@ -196,6 +205,15 @@ export default function LoginScreen({ onLogin }) {
       }
 
       if (password.trim()) {
+        // Check if email already exists before linking
+        const emailExists = await checkEmailExists(resolvedEmail);
+        if (emailExists) {
+          alert('This email is already in use with another account. Please use a different email.');
+          setEmail('');
+          setSyncedEmail('');
+          return;
+        }
+
         const credential = EmailAuthProvider.credential(resolvedEmail, password.trim());
         await linkWithCredential(currentUser, credential);
       }
@@ -220,6 +238,12 @@ export default function LoginScreen({ onLogin }) {
         errorMessage = 'This account already has an email sign-in method linked.';
       } else if (err.code === 'auth/credential-already-in-use') {
         errorMessage = 'That email/password combination is already linked to another account.';
+      }
+      
+      // For email-already-in-use, clear the email field so user can try a different email
+      if (err.code === 'auth/email-already-in-use') {
+        setEmail('');
+        setSyncedEmail('');
       }
       
       alert(errorMessage);
@@ -248,6 +272,23 @@ export default function LoginScreen({ onLogin }) {
 
     setValidationError('');
     return true;
+  };
+
+  /**
+   * Check if an email is already registered in Firebase.
+   * Returns true if the email exists, false if it doesn't or on error.
+   */
+  const checkEmailExists = async (emailToCheck) => {
+    try {
+      // Try to sign in with a dummy password to see if the email exists
+      // This will throw an error if the email doesn't exist, which we catch
+      const methods = await auth.fetchSignInMethodsForEmail(emailToCheck.trim());
+      // If methods are returned, the email exists
+      return methods && methods.length > 0;
+    } catch (err) {
+      // If error, email likely doesn't exist
+      return false;
+    }
   };
 
   const isNextDisabled = () => {
@@ -567,15 +608,15 @@ export default function LoginScreen({ onLogin }) {
           {/* Social Login Buttons */}
           <div className="signup-step-social">
             <button className="login-social-btn google" onClick={handleGoogleLogin}>
-              <img src={googleLogo} alt="Google" width="20" height="20" />
+              <img src={googleLogo} alt="Google" width="24" height="24" />
               <span>Continue with Google</span>
             </button>
             <button className="login-social-btn facebook" onClick={handleFacebookLogin}>
-              <img src={facebookLogo} alt="Facebook" width="20" height="20" />
+              <img src={facebookLogo} alt="Facebook" width="24" height="24" />
               <span>Continue with Facebook</span>
             </button>
             <button className="login-social-btn microsoft" onClick={handleMicrosoftLogin}>
-              <img src={microsoftLogo} alt="Microsoft" width="20" height="20" />
+              <img src={microsoftLogo} alt="Microsoft" width="24" height="24" />
               <span>Continue with Microsoft</span>
             </button>
           </div>

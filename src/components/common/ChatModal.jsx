@@ -220,12 +220,16 @@ export default function ChatModal({ isOpen, onClose }) {
       pending: true,
     };
 
+    // Build history including the new user message for the API call
+    // (React state `messages` is stale inside this closure)
+    const historyForApi = [...messages, userEntry];
+
     setMessages((prev) => [...prev, userEntry, pendingEntry]);
     setLoading(true);
     if (sheetHeight < SNAP_MID) setSheetHeight(SNAP_MID);
 
     try {
-      const responseText = await callGeminiChat(messages, requestText, {
+      const responseText = await callGeminiChat(historyForApi, requestText, {
         mode,
         attachments: currentAttachments,
       });
