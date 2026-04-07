@@ -5,11 +5,11 @@ import { callGeminiChat } from "../../utils/geminiApi.js";
 import "../../styles/chatmodal.css";
 
 const SUGGESTIONS = [
-  { icon: FileText, label: "Research a Topic" },
-  { icon: Search, label: "Semantic Search" },
-  { icon: LayoutGrid, label: "Get an Overview" },
-  { icon: FileText, label: "Summarize Notes" },
-  { icon: Search, label: "Find a Study Plan" },
+  { icon: FileText, label: "Research a Topic", prompt: "Help me research a topic. Start by asking what subject I want to explore and what depth I need." },
+  { icon: Search, label: "Semantic Search", prompt: "Help me do a semantic search. Ask what I am looking for and what context I already have." },
+  { icon: LayoutGrid, label: "Get an Overview", prompt: "Give me a clear overview of this topic and break it into the main parts I should understand first." },
+  { icon: FileText, label: "Summarize Notes", prompt: "Help me summarize my notes into the most important takeaways and action items." },
+  { icon: Search, label: "Find a Study Plan", prompt: "Build me a practical study plan. Ask what I am learning, my deadline, and how much time I have each day." },
 ];
 
 /* Snap points as % of parent height */
@@ -20,6 +20,8 @@ const SNAP_MAX = 0.92;   // expanded
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
 let nextChatId = 1;
+let nextPendingMessageId = 1;
+
 function makeChat() {
   return { id: nextChatId++, title: "New Chat", messages: [] };
 }
@@ -31,7 +33,7 @@ async function generateTitle(messages) {
     const title = await callGeminiChat(
       [],
       `Below is the start of a conversation. Generate a short title (max 5 words, no quotes, no punctuation at the end) that captures the topic.\n\n${snippet}`,
-      { mode: "fast", maxOutputTokens: 20, temperature: 0.3 }
+      { mode: "fast", purpose: "title" }
     );
     const cleaned = title.replace(/^["']|["']$/g, "").replace(/[.!?]+$/, "").trim();
     return cleaned || "New Chat";
@@ -194,40 +196,47 @@ export default function ChatModal({ isOpen, onClose }) {
 
   /* ---- chat logic ---- */
   const send = async (text) => {
+    if (loading) return;
+
     const userMessage = text || input.trim();
     if (!userMessage && attachments.length === 0) return;
+
     setInput("");
     const currentAttachments = [...attachments];
     setAttachments([]);
+    setSuggestionsSliding(false);
 
-    // Build file parts for Gemini inline_data
-    const fileParts = currentAttachments.map((a) => ({
-      inline_data: { mime_type: a.mime, data: a.data },
-    }));
-
-    // Build display parts for the message bubble
-    const userParts = [{ text: userMessage || "(attached files)" }];
-    if (currentAttachments.length > 0) {
-      userParts.push(...currentAttachments.map((a) => ({
-        inline_data: { mime_type: a.mime, data: a.data },
-      })));
-    }
-
-    setMessages((prev) => [...prev, {
+    const requestText = userMessage || "Describe the attached file(s).";
+    const userEntry = {
       role: "user",
       text: userMessage || `📎 ${currentAttachments.map((a) => a.name).join(", ")}`,
       attachments: currentAttachments,
-      parts: userParts,
-    }]);
+    };
+    const pendingId = `pending-${nextPendingMessageId++}`;
+    const pendingEntry = {
+      id: pendingId,
+      role: "assistant",
+      text: "",
+      pending: true,
+    };
+
+    setMessages((prev) => [...prev, userEntry, pendingEntry]);
     setLoading(true);
     if (sheetHeight < SNAP_MID) setSheetHeight(SNAP_MID);
+
     try {
-      const responseText = await callGeminiChat(messages, userMessage || "Describe the attached file(s).", {
+      const responseText = await callGeminiChat(messages, requestText, {
         mode,
-        fileParts: fileParts.length > 0 ? fileParts : undefined,
+        attachments: currentAttachments,
       });
+
       setMessages((prev) => {
-        const updated = [...prev, { role: "assistant", text: responseText }];
+        const updated = prev.map((message) => (
+          message.id === pendingId
+            ? { role: "assistant", text: responseText }
+            : message
+        ));
+
         // Auto-generate title after first assistant reply
         if (activeChat.title === "New Chat" && updated.filter((m) => m.role === "assistant").length === 1) {
           const chatId = activeChatId;
@@ -246,7 +255,11 @@ export default function ChatModal({ isOpen, onClose }) {
         errorMsg = "API Error: Check console. Backend proxy may not have valid API key.";
       }
       
-      setMessages((prev) => [...prev, { role: "assistant", text: `Error: ${errorMsg}` }]);
+      setMessages((prev) => prev.map((message) => (
+        message.id === pendingId
+          ? { role: "assistant", text: `Error: ${errorMsg}` }
+          : message
+      )));
     } finally {
       setLoading(false);
     }
@@ -287,8 +300,10 @@ export default function ChatModal({ isOpen, onClose }) {
   };
 
   const handleSuggestion = (label) => {
+    if (loading) return;
+    const suggestion = SUGGESTIONS.find((item) => item.label === label);
     setSuggestionsSliding(true);
-    setTimeout(() => send(label), 280);
+    send(suggestion?.prompt || label);
   };
 
   const visibleSuggestions = showAllSuggestions ? SUGGESTIONS : SUGGESTIONS.slice(0, 3);
@@ -404,7 +419,7 @@ export default function ChatModal({ isOpen, onClose }) {
         {/* Messages */}
         <div className="chat-modal-messages" ref={messagesContainerRef}>
           {messages.map((msg, idx) => (
-            <div key={idx} className={`chat-message chat-message-${msg.role}`}>
+            <div key={msg.id || idx} className={`chat-message chat-message-${msg.role}`}>
               {msg.role === "assistant" && (
                 <img src={rumpelIcon} alt="Rumpel" className="chat-avatar" />
               )}
@@ -418,11 +433,11 @@ export default function ChatModal({ isOpen, onClose }) {
                     ))}
                   </div>
                 )}
-                {msg.text}
+                {msg.pending ? <Loader2 size={18} className="spin" /> : msg.text}
               </div>
             </div>
           ))}
-          {loading && (
+          {loading && !messages.some((msg) => msg.pending) && (
             <div className="chat-message chat-message-assistant">
               <img src={rumpelIcon} alt="Rumpel" className="chat-avatar" />
               <div className="chat-bubble chat-bubble-assistant chat-bubble-loading">
@@ -437,7 +452,7 @@ export default function ChatModal({ isOpen, onClose }) {
           <div className={`chat-suggestions${suggestionsSliding ? ' suggestions-slide-out' : ''}`}>
             <h3 className="chat-suggestions-title">Suggestions</h3>
             {visibleSuggestions.map(({ icon: Icon, label }, i) => (
-              <button key={i} className="chat-suggestion-row" onClick={() => handleSuggestion(label)}>
+              <button key={i} className="chat-suggestion-row" onClick={() => handleSuggestion(label)} disabled={loading}>
                 <Icon size={16} className="chat-suggestion-icon" />
                 <span>{label}</span>
               </button>

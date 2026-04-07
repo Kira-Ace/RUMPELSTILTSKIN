@@ -1,79 +1,92 @@
-# Rumpel API Proxy Server
+# Rumpel Chat Server
 
-Simple Express.js backend that securely proxies requests to the Google Gemini API.
+Express backend for server-side Gemini chat completions. The browser only sends app-level chat input to this server; Gemini request shaping, model fallback, and the API key stay server-side.
 
-## Why a Proxy?
+## Local Setup
 
-Exposing API keys in client-side code is a security risk. This proxy keeps your secret key server-side only.
+### 1. Create a server env file
 
-## Setup
-
-### 1. Get an API Key
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create a new project or select existing one
-3. Enable the **Generative Language API**
-4. Create an API key (Application default / Unrestricted for dev)
-5. Copy the key
-
-### 2. Configure Environment
-
-Create a `.env.local` file in the **root directory** (not in `server/`):
+Copy [server/.env.example](server/.env.example) to `server/.env.local` and set your key:
 
 ```bash
-VITE_GOOGLE_API_KEY=your-api-key-here
+GEMINI_API_KEY=your-api-key-here
+PORT=3001
 ```
 
-The proxy will read this from the parent directory.
+Recommended: keep Gemini secrets in `server/.env.local` only. The server still supports older root-level env setup as a fallback, but that path is deprecated.
 
-### 3. Install & Run
+### 2. Install and run the server
 
 ```bash
 cd server
 npm install
-npm run dev     # Watch mode
-# or
-npm start       # Single run
+npm run dev
 ```
 
 Server runs on `http://localhost:3001` by default.
 
-### 4. Run Frontend (in separate terminal)
+### 3. Run the frontend
+
+In the repo root, set the frontend proxy URL if needed:
+
+```bash
+VITE_API_PROXY=http://localhost:3001
+```
+
+Then start the client:
 
 ```bash
 npm run dev
 ```
 
-Frontend will call `http://localhost:3001/api/chat` automatically.
-
 ## API Endpoints
 
 ### POST /api/chat
 
+App-level chat endpoint. The client sends conversation data, not raw Gemini payloads.
+
 **Request:**
+
 ```json
 {
-  "model": "gemini-2.5-flash",
-  "contents": [{ "role": "user", "parts": [{ "text": "Hello" }] }],
-  "generationConfig": {
-    "maxOutputTokens": 1000,
-    "temperature": 0.8
-  }
+  "messages": [
+    { "role": "user", "text": "Help me plan my week" },
+    { "role": "assistant", "text": "What kind of week are you planning for?" }
+  ],
+  "userMessage": "Focus on study blocks",
+  "attachments": [
+    {
+      "name": "schedule.png",
+      "mime": "image/png",
+      "data": "<base64>"
+    }
+  ],
+  "mode": "auto",
+  "purpose": "chat"
 }
 ```
 
 **Response:**
+
 ```json
 {
-  "text": "Response from Gemini",
+  "text": "Here is a study-first weekly plan...",
   "model": "gemini-2.5-flash"
 }
 ```
 
+**Supported fields:**
+
+- `messages`: prior chat history with `role`, `text`, and optional `attachments`
+- `userMessage`: the latest user input
+- `attachments`: current request attachments as `{ name, mime, data }`
+- `mode`: `fast`, `auto`, or `default`
+- `purpose`: `chat` or `title`
+
 **Errors:**
-- `400`: Missing model or contents
-- `500`: API key not configured or API error
-- Returns `{ error: "message" }`
+
+- `400`: invalid request body or missing user input
+- `500`: missing server API key or upstream failure
 
 ### GET /health
 
@@ -81,51 +94,38 @@ Simple health check endpoint.
 
 ## Deployment
 
-### Local Network
-Frontend and server both run locally during dev.
+Deploy the `server/` folder to your Node host of choice and set `GEMINI_API_KEY` in the platform's environment settings.
 
-### Production Deployment
+Examples:
 
-Deploy the `server/` folder to:
+- Vercel
+- Railway
+- Render
+- Heroku
+- Your own VPS or Docker host
 
-- **Vercel** (Node.js): https://vercel.com
-- **Railway**: https://railway.app
-- **Render**: https://render.com
-- **Heroku**: https://heroku.com
-- **Your own VPS/Docker**
-
-Then update `.env.local` in frontend:
-```bash
-VITE_API_PROXY=https://your-deployed-proxy.com
-```
-
-### Environment Variable
-
-The proxy reads `VITE_GOOGLE_API_KEY` from:
-1. Root `.env.local` (for local dev)
-2. Platform environment variables (for deployed server)
-
-On Vercel/Railway/Render, add the env var in their dashboard.
+Point the frontend at the deployed backend with `VITE_API_PROXY=https://your-server.example.com`.
 
 ## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| Port already in use | Change `PORT` env var or kill process using :3001 |
-| "API key not configured" | Ensure `.env.local` exists in **root** with `VITE_GOOGLE_API_KEY=...` |
-| CORS errors | Check that proxy has `cors()` middleware enabled |
-| 403 Forbidden | API key is leaked/disabled. Create a new one in Google Cloud Console |
-| Connection refused | Ensure proxy is running (`npm run dev` in `server/` folder) |
+| Port already in use | Change `PORT` or free `:3001` |
+| "API key not configured" | Create `server/.env.local` with `GEMINI_API_KEY=...` |
+| Connection refused | Start the backend from `server/` with `npm run dev` |
+| 403 Forbidden | Rotate the key in Google Cloud and update the server env |
+| Large attachment failures | Reduce file size or raise the JSON body limit intentionally |
 
 ## Security Notes
 
-✅ **Do:**
-- Keep `.env.local` in `.gitignore` (never commit API keys)
-- Use strong API key restrictions in Google Cloud (if possible)
-- Deploy proxy to HTTPS only
-- Use environment variables for production keys
+Do:
 
-❌ **Don't:**
-- Expose the proxy endpoint without authentication if public-facing
-- Commit `.env.local` to Git
-- Show API keys in logs/errors to users
+- Keep `server/.env.local` out of source control
+- Restrict the Gemini key in Google Cloud if possible
+- Use HTTPS in deployed environments
+
+Do not:
+
+- Put Gemini secrets in Vite-exposed env variables
+- Expose this endpoint publicly without auth or rate limiting if the app will be internet-facing
+- Return raw secrets in logs or HTTP error responses
