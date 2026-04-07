@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { X, Menu, ChevronDown, Plus, Zap, Circle, Loader2, Send, FileText, Search, LayoutGrid, Paperclip, Image as ImageIcon, XCircle, MessageSquare, Trash2, Pencil, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rumpelIcon from "../assets/rumpel.png";
 import { callGeminiChat } from "../../utils/geminiApi.js";
+import { CHAT_SYSTEM_PROMPT, CHAT_TASK_ACTION_PROMPT, CHAT_CONTEXT_CONFIG } from "../../utils/constants.js";
 import "../../styles/chatmodal.css";
 
 const SUGGESTIONS = [
@@ -22,6 +23,188 @@ const SNAP_MAX = 0.92;   // expanded
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
 const MARKDOWN_PLUGINS = [remarkGfm];
+const TASK_ACTION_BLOCK_RE = /<task-actions>([\s\S]*?)<\/task-actions>/i;
+const VALID_TASK_TAGS = new Set(["Math", "Science", "English", "History", "Other"]);
+const MAX_QUESTION_OPTIONS = 5;
+
+function parseDateKey(key) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  date.setHours(0, 0, 0, 0);
+
+  return { key, date };
+}
+
+function formatDateForPrompt(date) {
+  return date.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function buildTaskCalendarContext(tasksByDate = {}) {
+  const entries = Object.entries(tasksByDate)
+    .filter(([, tasks]) => Array.isArray(tasks) && tasks.length > 0)
+    .map(([key, tasks]) => {
+      const parsed = parseDateKey(key);
+      if (!parsed) return null;
+      return { key: parsed.key, date: parsed.date, tasks };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.date - b.date);
+
+  const totalTasks = entries.reduce((sum, entry) => sum + entry.tasks.length, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  const preferredEntries = entries.filter((entry) => entry.date >= today);
+  const contextEntries = (preferredEntries.length > 0 ? preferredEntries : entries).slice(0, CHAT_CONTEXT_CONFIG.maxDates);
+
+  const lines = [
+    "Live calendar context for this user:",
+    `- Today: ${formatDateForPrompt(today)} (${todayKey})`,
+    `- Calendar dates with tasks: ${entries.length}`,
+    `- Total saved tasks: ${totalTasks}`,
+  ];
+
+  if (contextEntries.length === 0) {
+    lines.push("- Upcoming tasks: none saved.");
+    return lines.join("\n");
+  }
+
+  lines.push("- Upcoming task details:");
+
+  contextEntries.forEach((entry) => {
+    lines.push(`  - ${formatDateForPrompt(entry.date)} (${entry.key})`);
+
+    entry.tasks.slice(0, CHAT_CONTEXT_CONFIG.maxTasksPerDate).forEach((task, idx) => {
+      const title = typeof task.title === "string" && task.title.trim() ? task.title.trim() : `Task ${idx + 1}`;
+      const time = typeof task.time === "string" && task.time.trim() ? ` @ ${task.time.trim()}` : "";
+      const tag = typeof task.tag === "string" && task.tag.trim() ? ` [${task.tag.trim()}]` : "";
+      lines.push(`    - ${title}${time}${tag}`);
+    });
+
+    const remaining = entry.tasks.length - CHAT_CONTEXT_CONFIG.maxTasksPerDate;
+    if (remaining > 0) {
+      lines.push(`    - (+${remaining} more task${remaining === 1 ? "" : "s"})`);
+    }
+  });
+
+  return lines.join("\n");
+}
+
+function stripJsonFence(text) {
+  const trimmed = text.trim();
+  const fenceMatch = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(trimmed);
+  return fenceMatch ? fenceMatch[1].trim() : trimmed;
+}
+
+function normalizeTaskForCreation(rawTask) {
+  if (!rawTask || typeof rawTask !== "object") return null;
+
+  const title = typeof rawTask.title === "string" ? rawTask.title.trim() : "";
+  const date = typeof rawTask.date === "string" ? rawTask.date.trim() : "";
+  if (!title || !parseDateKey(date)) return null;
+
+  const time = typeof rawTask.time === "string" ? rawTask.time.trim() : "";
+  const desc = typeof rawTask.desc === "string" ? rawTask.desc.trim() : "";
+  const tag = typeof rawTask.tag === "string" && VALID_TASK_TAGS.has(rawTask.tag.trim())
+    ? rawTask.tag.trim()
+    : "Other";
+
+  return {
+    id: Date.now() + Math.floor(Math.random() * 1_000_000),
+    title,
+    date,
+    time,
+    desc,
+    tag,
+  };
+}
+
+function normalizeQuestionForUi(rawQuestion, idx) {
+  if (typeof rawQuestion === "string") {
+    const question = rawQuestion.trim();
+    if (!question) return null;
+    return {
+      id: `q-${idx + 1}`,
+      question,
+      options: [],
+      allowFreeText: true,
+      inputPlaceholder: "Type your answer...",
+    };
+  }
+
+  if (!rawQuestion || typeof rawQuestion !== "object") return null;
+
+  const question = typeof rawQuestion.question === "string" ? rawQuestion.question.trim() : "";
+  if (!question) return null;
+
+  const options = Array.isArray(rawQuestion.options)
+    ? rawQuestion.options
+        .map((option) => (typeof option === "string" ? option.trim() : ""))
+        .filter(Boolean)
+        .slice(0, MAX_QUESTION_OPTIONS)
+    : [];
+
+  const id = typeof rawQuestion.id === "string" && rawQuestion.id.trim()
+    ? rawQuestion.id.trim()
+    : `q-${idx + 1}`;
+
+  const allowFreeText = typeof rawQuestion.allowFreeText === "boolean"
+    ? rawQuestion.allowFreeText
+    : true;
+
+  const inputPlaceholder = typeof rawQuestion.inputPlaceholder === "string" && rawQuestion.inputPlaceholder.trim()
+    ? rawQuestion.inputPlaceholder.trim()
+    : "Type your answer...";
+
+  return { id, question, options, allowFreeText, inputPlaceholder };
+}
+
+function extractTaskActions(rawText) {
+  const sourceText = typeof rawText === "string" ? rawText : "";
+  const match = TASK_ACTION_BLOCK_RE.exec(sourceText);
+
+  if (!match) {
+    return { visibleText: sourceText, createTasks: [], askQuestions: [] };
+  }
+
+  const withoutBlock = sourceText.replace(match[0], "").trim();
+  const jsonPayload = stripJsonFence(match[1]);
+
+  try {
+    const parsed = JSON.parse(jsonPayload);
+    const createTasks = Array.isArray(parsed?.createTasks)
+      ? parsed.createTasks.map(normalizeTaskForCreation).filter(Boolean)
+      : [];
+    const askQuestions = Array.isArray(parsed?.askQuestions)
+      ? parsed.askQuestions.map(normalizeQuestionForUi).filter(Boolean)
+      : [];
+
+    return { visibleText: withoutBlock, createTasks, askQuestions };
+  } catch {
+    return { visibleText: withoutBlock, createTasks: [], askQuestions: [] };
+  }
+}
 
 /** Ask Gemini to generate a short title for the conversation */
 async function generateTitle(messages) {
@@ -39,7 +222,7 @@ async function generateTitle(messages) {
   }
 }
 
-export default function ChatModal({ isOpen, onClose }) {
+export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
   const nextChatIdRef = useRef(1);
   const nextMessageIdRef = useRef(1);
 
@@ -64,11 +247,17 @@ export default function ChatModal({ isOpen, onClose }) {
   const [editingChatId, setEditingChatId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [suggestionsSliding, setSuggestionsSliding] = useState(false);
+  const [questionDrafts, setQuestionDrafts] = useState({});
   const fileInputRef = useRef(null);
 
   /* derived */
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0];
   const messages = activeChat?.messages || [];
+  const taskCalendarContext = useMemo(() => buildTaskCalendarContext(tasks), [tasks]);
+  const chatSystemPrompt = useMemo(
+    () => `${CHAT_SYSTEM_PROMPT}\n\n${CHAT_TASK_ACTION_PROMPT}\n\n${taskCalendarContext}`,
+    [taskCalendarContext]
+  );
 
   const setMessages = (updater, chatId = activeChatId) => {
     setChats((prev) =>
@@ -82,6 +271,14 @@ export default function ChatModal({ isOpen, onClose }) {
 
   const setChatTitle = (id, title) => {
     setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)));
+  };
+
+  const sendQuestionReply = (questionKey) => {
+    const reply = (questionDrafts[questionKey] || "").trim();
+    if (!reply || loading) return;
+
+    setQuestionDrafts((prev) => ({ ...prev, [questionKey]: "" }));
+    send(reply);
   };
 
   /* drag state */
@@ -249,18 +446,51 @@ export default function ChatModal({ isOpen, onClose }) {
       const responseText = await callGeminiChat(historyForApi, requestText, {
         mode,
         attachments: currentAttachments,
+        systemPrompt: chatSystemPrompt,
       });
+
+      const { visibleText, createTasks, askQuestions } = extractTaskActions(responseText);
+      const tasksToCreate = typeof setTasks === "function" ? createTasks : [];
+
+      if (tasksToCreate.length > 0) {
+        setTasks((prev) => {
+          const next = { ...prev };
+
+          tasksToCreate.forEach((task) => {
+            next[task.date] = [
+              ...(Array.isArray(next[task.date]) ? next[task.date] : []),
+              {
+                id: task.id,
+                title: task.title,
+                time: task.time,
+                desc: task.desc,
+                tag: task.tag,
+              },
+            ];
+          });
+
+          return next;
+        });
+      }
+
+      const taskCreatedLine = tasksToCreate.length > 0
+        ? `\n\n✅ Added ${tasksToCreate.length} task${tasksToCreate.length === 1 ? "" : "s"} to your calendar.`
+        : "";
+      const fallbackText = askQuestions.length > 0
+        ? "I need a couple of quick details before I add that task."
+        : "Done.";
+      const assistantText = `${visibleText || ""}${taskCreatedLine}`.trim() || fallbackText;
 
       setMessages((prev) => {
         const updated = prev.map((message) => (
           message.id === pendingId
-            ? { ...message, role: "assistant", text: responseText, pending: false }
+            ? { ...message, role: "assistant", text: assistantText, questions: askQuestions, pending: false }
             : message
         ));
         return updated;
       }, chatIdAtSend);
 
-      const messagesForTitle = [...historyForApi, { id: pendingId, role: "assistant", text: responseText }];
+      const messagesForTitle = [...historyForApi, { id: pendingId, role: "assistant", text: assistantText }];
       if ((chatAtSend?.title || "New Chat") === "New Chat" && messagesForTitle.filter((m) => m.role === "assistant").length === 1) {
         generateTitle(messagesForTitle).then((t) => setChatTitle(chatIdAtSend, t));
       }
@@ -291,6 +521,7 @@ export default function ChatModal({ isOpen, onClose }) {
     setActiveChatId(fresh.id);
     setInput("");
     setAttachments([]);
+    setQuestionDrafts({});
     setSuggestionsSliding(false);
     setShowHistory(false);
   };
@@ -299,6 +530,7 @@ export default function ChatModal({ isOpen, onClose }) {
     setActiveChatId(id);
     setInput("");
     setAttachments([]);
+    setQuestionDrafts({});
     setShowHistory(false);
   };
 
@@ -448,16 +680,78 @@ export default function ChatModal({ isOpen, onClose }) {
                   </div>
                 )}
                 {msg.pending ? <Loader2 size={18} className="spin" /> : (
-                  <div className="chat-markdown">
-                    <ReactMarkdown
-                      remarkPlugins={MARKDOWN_PLUGINS}
-                      components={{
-                        a: (props) => <a {...props} target="_blank" rel="noreferrer noopener" />,
-                      }}
-                    >
-                      {msg.text || ""}
-                    </ReactMarkdown>
-                  </div>
+                  <>
+                    <div className="chat-markdown">
+                      <ReactMarkdown
+                        remarkPlugins={MARKDOWN_PLUGINS}
+                        components={{
+                          a: (props) => <a {...props} target="_blank" rel="noreferrer noopener" />,
+                        }}
+                      >
+                        {msg.text || ""}
+                      </ReactMarkdown>
+                    </div>
+                    {Array.isArray(msg.questions) && msg.questions.length > 0 && (
+                      <div className="chat-ai-questions">
+                        {msg.questions.map((question, qIdx) => {
+                          const questionId = question.id || `question-${qIdx}`;
+                          const questionReplyKey = `${msg.id || `legacy-${idx}`}-${questionId}`;
+
+                          return (
+                            <div className="chat-ai-question" key={questionId}>
+                              <div className="chat-ai-question-text">{question.question}</div>
+                              {Array.isArray(question.options) && question.options.length > 0 && (
+                                <div className="chat-ai-options">
+                                  {question.options.map((option, optIdx) => (
+                                    <button
+                                      key={`${questionId}-option-${optIdx}`}
+                                      type="button"
+                                      className="chat-ai-option-btn"
+                                      disabled={loading}
+                                      onClick={() => {
+                                        if (!loading) send(option);
+                                      }}
+                                    >
+                                      {option}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {question.allowFreeText !== false && (
+                                <div className="chat-ai-freeform">
+                                  <input
+                                    type="text"
+                                    className="chat-ai-input"
+                                    placeholder={question.inputPlaceholder || "Type your answer..."}
+                                    value={questionDrafts[questionReplyKey] || ""}
+                                    disabled={loading}
+                                    onChange={(e) => {
+                                      const nextValue = e.target.value;
+                                      setQuestionDrafts((prev) => ({ ...prev, [questionReplyKey]: nextValue }));
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        sendQuestionReply(questionReplyKey);
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="chat-ai-send-btn"
+                                    disabled={loading || !(questionDrafts[questionReplyKey] || "").trim()}
+                                    onClick={() => sendQuestionReply(questionReplyKey)}
+                                  >
+                                    <Send size={13} />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

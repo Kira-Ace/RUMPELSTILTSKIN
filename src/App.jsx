@@ -64,7 +64,7 @@ export default function App() {
             <SettingsScreen darkMode={darkMode} setDarkMode={setDarkMode} onSignOut={handleSignOut}/>
           </div>
           <BottomNav active={tab} setActive={setTab} setChatModalOpen={setChatModalOpen}/>
-          <ChatModal isOpen={chatModalOpen} onClose={() => setChatModalOpen(false)}/>
+          <ChatModal isOpen={chatModalOpen} onClose={() => setChatModalOpen(false)} tasks={tasks} setTasks={setTasks}/>
         </>
       )}
     </div>
