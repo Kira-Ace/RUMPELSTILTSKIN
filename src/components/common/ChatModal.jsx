@@ -8,11 +8,11 @@ import { CHAT_SYSTEM_PROMPT, CHAT_TASK_ACTION_PROMPT, CHAT_CONTEXT_CONFIG } from
 import "../../styles/chatmodal.css";
 
 const SUGGESTIONS = [
-  { icon: FileText, label: "Research a Topic", prompt: "Help me research a topic. Start by asking what subject I want to explore and what depth I need." },
-  { icon: Search, label: "Semantic Search", prompt: "Help me do a semantic search. Ask what I am looking for and what context I already have." },
-  { icon: LayoutGrid, label: "Get an Overview", prompt: "Give me a clear overview of this topic and break it into the main parts I should understand first." },
-  { icon: FileText, label: "Summarize Notes", prompt: "Help me summarize my notes into the most important takeaways and action items." },
-  { icon: Search, label: "Find a Study Plan", prompt: "Build me a practical study plan. Ask what I am learning, my deadline, and how much time I have each day." },
+  { icon: FileText, label: "Draft a Response", prompt: "Help me draft a customer support response. Ask what the customer's issue is and what tone I should use." },
+  { icon: Search, label: "Search Knowledge Base", prompt: "Help me find relevant information from our knowledge base. Ask what topic or issue I need help with." },
+  { icon: LayoutGrid, label: "Ticket Overview", prompt: "Give me a summary of the current ticket and suggest next steps." },
+  { icon: FileText, label: "Summarize Conversation", prompt: "Summarize this customer interaction into key points and action items." },
+  { icon: Search, label: "Troubleshoot Issue", prompt: "Help me troubleshoot a customer's technical issue. Ask what the problem is and what they've already tried." },
 ];
 
 /* Snap points as % of parent height */
@@ -24,7 +24,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
 const MARKDOWN_PLUGINS = [remarkGfm];
 const TASK_ACTION_BLOCK_RE = /<task-actions>([\s\S]*?)<\/task-actions>/i;
-const VALID_TASK_TAGS = new Set(["Math", "Science", "English", "History", "Other"]);
+const VALID_TASK_TAGS = new Set(["Billing", "Technical", "General", "Feedback", "Other"]);
 const MAX_QUESTION_OPTIONS = 5;
 
 function parseDateKey(key) {

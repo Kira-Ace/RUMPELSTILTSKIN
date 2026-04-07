@@ -55,13 +55,12 @@ const playButtonSound = () => {
 
 export default function LoginScreen({ onLogin }) {
   const [mode, setMode] = useState(null); // null, 'signup', or 'login'
-  const [step, setStep] = useState(0); // 0: age, 1: name, 2: email, 3: password
+  const [step, setStep] = useState(0); // 0: name, 1: email, 2: password
   const [previousStep, setPreviousStep] = useState(null); // for animation
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [age, setAge] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [isStepTransitioning, setIsStepTransitioning] = useState(false);
@@ -87,7 +86,7 @@ export default function LoginScreen({ onLogin }) {
     }
   }, [mode, welcomePhrases.length]);
 
-  const steps = ['age', 'name', 'email', 'password'];
+  const steps = ['name', 'email', 'password'];
   const currentStep = mode === 'signup' ? steps[step] : null;
   const hasSyncedEmail = Boolean(syncedEmail.trim());
   const resolvedEmail = email.trim() || syncedEmail.trim();
@@ -99,7 +98,6 @@ export default function LoginScreen({ onLogin }) {
     setEmail('');
     setPassword('');
     setName('');
-    setAge('');
     setIsTransitioning(false);
     setIsStepTransitioning(false);
     setValidationError('');
@@ -126,7 +124,7 @@ export default function LoginScreen({ onLogin }) {
   const isPasswordRequired = !hasSyncedEmail;
 
   const handleNext = () => {
-    if (step < 3) {
+    if (step < 2) {
       setIsStepTransitioning(true);
       setPreviousStep(step);
       setStep(step + 1);
@@ -148,14 +146,14 @@ export default function LoginScreen({ onLogin }) {
   // Signup handler - create user in Firebase
   const handleSignup = async () => {
     try {
-      if (!age.trim() || !name.trim()) {
-        alert('Age and name are required');
+      if (!name.trim()) {
+        alert('Name is required');
         return;
       }
 
       if (!hasSyncedEmail) {
         if (!email.trim() || !password.trim()) {
-          alert('Age, name, email, and password are required');
+          alert('Name, email, and password are required');
           return;
         }
 
@@ -184,7 +182,6 @@ export default function LoginScreen({ onLogin }) {
             displayName: name.trim(),
           });
 
-          localStorage.setItem(`user_age_${userCredential.user.uid}`, age.trim());
           onLogin();
         }
 
@@ -224,7 +221,6 @@ export default function LoginScreen({ onLogin }) {
         displayName: name.trim(),
       });
 
-      localStorage.setItem(`user_age_${currentUser.uid}`, age.trim());
       onLogin();
     } catch (err) {
       console.error('Signup error:', err);
@@ -294,13 +290,12 @@ export default function LoginScreen({ onLogin }) {
   };
 
   const isNextDisabled = () => {
-    if (step === 0) return !age.trim();
-    if (step === 1) return !name.trim();
-    if (step === 2) {
+    if (step === 0) return !name.trim();
+    if (step === 1) {
       if (hasSyncedEmail && !email.trim()) return false;
       return !email.trim() || Boolean(validationError);
     }
-    if (step === 3) {
+    if (step === 2) {
       if (!password.trim()) {
         return isPasswordRequired;
       }
@@ -409,10 +404,6 @@ export default function LoginScreen({ onLogin }) {
           await updateProfile(result.user, {
             displayName: name.trim(),
           });
-        }
-
-        if (age.trim()) {
-          localStorage.setItem(`user_age_${result.user.uid}`, age);
         }
 
         // Extract Google access token for Calendar API
@@ -647,14 +638,12 @@ export default function LoginScreen({ onLogin }) {
 
   // Signup step-by-step form
   const stepQuestions = {
-    age: 'How old are you?',
     name: 'Who do you go by?',
     email: 'What\'s your email?',
     password: 'Create a password'
   };
 
   const stepPlaceholders = {
-    age: 'e.g., 25',
     name: 'Name goes here',
     email: hasSyncedEmail ? syncedEmail || 'Email already synced' : 'your.email@example.com',
     password: hasSyncedEmail ? 'Optional: add a password for email sign-in' : 'Make it strong!'
@@ -681,7 +670,7 @@ export default function LoginScreen({ onLogin }) {
         
         {/* Progress Dashes */}
         <div className="signup-progress-dashes">
-          {[0, 1, 2, 3].map((i) => (
+          {[0, 1, 2].map((i) => (
             <div 
               key={i} 
               className={`progress-dash ${i === step ? 'active' : i < step ? 'completed' : ''}`}
@@ -770,17 +759,15 @@ export default function LoginScreen({ onLogin }) {
           ) : (
             <div>
               <input
-                type={currentStep === 'age' ? 'number' : currentStep === 'email' ? 'email' : 'text'}
+                type={currentStep === 'email' ? 'email' : 'text'}
                 className="login-input signup-step-input"
                 placeholder={stepPlaceholders[currentStep]}
                 value={
-                  currentStep === 'age' ? age :
                   currentStep === 'name' ? name :
                   currentStep === 'email' ? email : ''
                 }
                 onChange={(e) => {
-                  if (currentStep === 'age') setAge(e.target.value);
-                  else if (currentStep === 'name') setName(e.target.value);
+                  if (currentStep === 'name') setName(e.target.value);
                   else if (currentStep === 'email') {
                     const value = e.target.value;
                     setEmail(value);
