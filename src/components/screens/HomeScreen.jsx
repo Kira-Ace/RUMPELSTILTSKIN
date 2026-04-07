@@ -24,19 +24,19 @@ export default function HomeScreen({ tasks }) {
             <div className="home-widget-row">
               <div className="widget-btn-wrap">
                 <button className="widget-btn"><Plus size={22} /></button>
-                <span className="widget-label">Add</span>
+                <span className="widget-label">Placeholder</span>
               </div>
               <div className="widget-btn-wrap">
                 <button className="widget-btn"><RefreshCw size={22} /></button>
-                <span className="widget-label">Exchange</span>
+                <span className="widget-label">Placeholder</span>
               </div>
               <div className="widget-btn-wrap">
                 <button className="widget-btn"><List size={22} /></button>
-                <span className="widget-label">Details</span>
+                <span className="widget-label">Placeholder</span>
               </div>
               <div className="widget-btn-wrap">
                 <button className="widget-btn"><MoreHorizontal size={22} /></button>
-                <span className="widget-label">More</span>
+                <span className="widget-label">Placeholder</span>
               </div>
             </div>
           </div>
@@ -65,8 +65,8 @@ export default function HomeScreen({ tasks }) {
               </div>
             )}
 
-            {/* Widgets heading */}
-            <div className="home-section-title">Widgets</div>
+            {/*  heading */}
+            <div className="home-section-title"></div>
 
           </div>
 

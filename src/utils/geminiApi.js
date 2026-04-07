@@ -1,39 +1,68 @@
 /**
  * Gemini API utility functions
- * Centralized API calls for chat and file processing
- * With automatic fallback to alternative models
+ * Calls backend proxy at /api/chat (keeps API key secure server-side)
  * 
- * TEMPLATE: Create a .env.local file in the root with:
- * VITE_GOOGLE_API_KEY={{YOUR_GOOGLE_GENERATIVE_AI_API_KEY}}
+ * Backend proxy reads VITE_GOOGLE_API_KEY from root .env.local
  */
 
-const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+const API_PROXY = import.meta.env.VITE_API_PROXY || 'http://localhost:3001';
 
-// ─── Available model profiles ───────────────────────────────
-// "fast"  → lightweight, low-latency models tried first
-// "auto"  → picks heavier models for complex prompts, lighter for simple ones
-// default → balanced fallback chain
-
-const MODELS_FAST = [
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-001",
-  "gemini-1.5-flash",
-];
-
-const MODELS_FULL = [
-  "gemini-2.5-pro",
+// ─── All available models (hardcoded from API) ───────────────────────────────
+const AVAILABLE_MODELS_LIST = [
+  // Primary/latest (fastest)
   "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-pro",
-];
-
-const MODELS_DEFAULT = [
-  "gemini-2.5-flash",
+  "gemini-flash-latest",
   "gemini-2.0-flash",
   "gemini-2.5-pro",
+  "gemini-pro-latest",
+  
+  // Fallbacks
   "gemini-2.0-flash-001",
-  "gemini-1.5-pro",
+  "gemini-2.0-flash-lite-001",
+  "gemini-2.0-flash-lite",
+  "gemini-2.5-flash-lite",
+  "gemini-flash-lite-latest",
+  
+  // TTS variants
+  "gemini-2.5-flash-preview-tts",
+  "gemini-2.5-pro-preview-tts",
+  
+  // Image variants
+  "gemini-2.5-flash-image",
+  "gemini-3-pro-image-preview",
+  "gemini-3.1-flash-image-preview",
+  
+  // Preview models
+  "gemini-3-pro-preview",
+  "gemini-3-flash-preview",
+  "gemini-3.1-pro-preview",
+  "gemini-3.1-pro-preview-customtools",
+  "gemini-3.1-flash-lite-preview",
+  
+  // Gemma models (fallback)
+  "gemma-3-1b-it",
+  "gemma-3-4b-it",
+  "gemma-3-12b-it",
+  "gemma-3-27b-it",
+  "gemma-3n-e4b-it",
+  "gemma-3n-e2b-it",
+  "gemma-4-26b-a4b-it",
+  "gemma-4-31b-it",
+  
+  // Specialty models
+  "gemini-3-pro-image-preview",
+  "nano-banana-pro-preview",
+  "lyria-3-clip-preview",
+  "lyria-3-pro-preview",
+  "gemini-robotics-er-1.5-preview",
+  "gemini-2.5-computer-use-preview-10-2025",
+  "deep-research-pro-preview-12-2025",
 ];
+
+// For UI/exports
+const MODELS_FAST = AVAILABLE_MODELS_LIST.slice(0, 5);
+const MODELS_FULL = AVAILABLE_MODELS_LIST.slice(5, 7);
+const MODELS_DEFAULT = AVAILABLE_MODELS_LIST;
 
 /** Exposed for the UI to list available model names */
 export const AVAILABLE_MODELS = {
@@ -67,77 +96,71 @@ export function getModelsForMode(mode, prompt) {
   return MODELS_DEFAULT;
 }
 
-let currentModel = MODELS_DEFAULT[0]; // Track which model is working
+let currentModel = MODELS_DEFAULT[0];
 
 /**
- * Build URL for a given model
+ * Call the backend proxy API
+ * @param {string} model - model name
+ * @param {object} payload - { contents, generationConfig }
  */
-const getURL = (model) => 
-  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`;
+const callProxyAPI = async (model, payload) => {
+  let res;
+  try {
+    res = await fetch(`${API_PROXY}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, ...payload }),
+    });
+  } catch (networkErr) {
+    // Network failure (proxy not running) — mark as non-retryable
+    const err = new Error('Backend proxy is not running. Start it: cd server && npm run dev');
+    err.isNetworkError = true;
+    throw err;
+  }
 
-/**
- * Check if error is model-not-found/unavailable (should trigger fallback)
- */
-const isModelError = (errMsg) => {
-  return errMsg.includes("not found") || 
-         errMsg.includes("not available") || 
-         errMsg.includes("is not supported") ||
-         errMsg.includes("no longer available");
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    const err = new Error(errData.error || `HTTP ${res.status}`);
+    // 404/unavailable = retryable with next model
+    err.isModelError = res.status === 404 || (errData.error || '').toLowerCase().includes('not found');
+    throw err;
+  }
+
+  const data = await res.json();
+  return data.text;
 };
 
 /**
- * Call Gemini API with fallback models
+ * Call Gemini API with fallback models (via proxy)
  * @param {object} payload
  * @param {number} retryCount
  * @param {string[]} [models] - ordered list of models to try
  */
-const callGeminiAPI = async (payload, retryCount = 0, models = MODELS_DEFAULT) => {
-  if (!API_KEY) {
-    throw new Error("API key not configured");
+const callGeminiAPI = async (payload, retryCount = 0, models = AVAILABLE_MODELS_LIST) => {
+  // Ensure models is always a valid array
+  if (!models || !Array.isArray(models)) {
+    models = AVAILABLE_MODELS_LIST;
   }
 
   const modelToTry = models[retryCount] || currentModel;
-  const url = getURL(modelToTry);
 
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const text = await callProxyAPI(modelToTry, payload);
 
-    if (!res.ok) {
-      const errData = await res.json();
-      const errMsg = errData.error?.message || "API request failed";
-
-      // If model not available, try next one
-      if (isModelError(errMsg) && retryCount < models.length - 1) {
-        console.warn(`Model ${modelToTry} unavailable, trying ${models[retryCount + 1]}...`);
-        return callGeminiAPI(payload, retryCount + 1, models);
-      }
-
-      // Handle quota exceeded
-      if (errMsg.includes("Quota exceeded")) {
-        const error = new Error(errMsg);
-        error.isQuotaExceeded = true;
-        throw error;
-      }
-
-      throw new Error(errMsg);
-    }
-
-    // Update current model if different
     if (modelToTry !== currentModel) {
       currentModel = modelToTry;
-      console.log(`Gemini API using model: ${modelToTry}`);
+      console.log(`✓ Using: ${modelToTry}`);
     }
 
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    return text;
   } catch (err) {
-    // If model error and more fallbacks available, retry
-    if (isModelError(err.message) && retryCount < models.length - 1) {
-      console.warn(`Model ${modelToTry} failed, trying ${models[retryCount + 1]}...`);
+    // Network error — proxy is down, don't bother retrying other models
+    if (err.isNetworkError) throw err;
+
+    // Only retry if it's a model-specific error (404, not found, etc.)
+    if (err.isModelError && retryCount < models.length - 1) {
+      const nextModel = models[retryCount + 1];
+      console.warn(`✗ ${modelToTry} failed → trying ${nextModel}`);
       return callGeminiAPI(payload, retryCount + 1, models);
     }
     throw err;
@@ -153,12 +176,7 @@ const callGeminiAPI = async (payload, retryCount = 0, models = MODELS_DEFAULT) =
  * @param {Array}  [config.fileParts] - inline file parts [{inline_data:{mime_type,data}}]
  */
 export async function callGeminiChat(messages, userMessage, config = {}) {
-  if (!API_KEY) {
-    throw new Error("API key not configured");
-  }
-
   const mode = config.mode || "default";
-  const models = getModelsForMode(mode, userMessage);
 
   // Build conversation history for Gemini
   const contents = messages.map((msg) => ({
@@ -186,17 +204,13 @@ export async function callGeminiChat(messages, userMessage, config = {}) {
     },
   };
 
-  return callGeminiAPI(payload, 0, models);
+  return callGeminiAPI(payload, 0, AVAILABLE_MODELS_LIST);
 }
 
 /**
  * Call Gemini API with files and system prompt (for planner)
  */
 export async function callGeminiWithFiles(userContent, fileParts, systemPrompt, config = {}) {
-  if (!API_KEY) {
-    throw new Error("API key not configured");
-  }
-
   const messageParts = [{ text: userContent }, ...fileParts];
 
   const payload = {
@@ -215,5 +229,5 @@ export async function callGeminiWithFiles(userContent, fileParts, systemPrompt, 
 
   console.log("Calling Gemini API...", { userContent: userContent.substring(0, 100) });
 
-  return callGeminiAPI(payload);
+  return callGeminiAPI(payload, 0, AVAILABLE_MODELS_LIST);
 }

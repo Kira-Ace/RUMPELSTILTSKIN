@@ -30,7 +30,7 @@
   width: auto;
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 5px 2px rgba(89, 14, 14, 0.20));
   will-change: transform;
 }
 

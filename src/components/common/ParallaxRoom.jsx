@@ -5,11 +5,11 @@ import { useEffect, useRef } from 'react';
  * Each value is a CSS color string (hex, rgb, hsl, etc.)
  */
 export const ROOM_THEME = {
-  backWall:   '#474034',   // back wall — aged stone grey
-  leftWall:   '#4a4438',   // left wall — darker stone
-  rightWall:  '#4a4438',   // right wall — darker stone
-  ceiling:    '#3a342a',   // ceiling — dark aged stone
-  floor:      '#2a251f',   // floor — darkest ground level
+  backWall:   '#f9f9f9',   // back wall — aged stone grey
+  leftWall:   '#ebebeb',   // left wall — darker stone
+  rightWall:  '#ebebeb',   // right wall — darker stone
+  ceiling:    '#d8d8d8',   // ceiling — dark aged stone
+  floor:      '#d8d8d8',   // floor — darkest ground level
   floorGrid:  'rgba(180,170,160,0.10)', // floor grid line color
 
   ambient:    0.13,         // corner shadow intensity (0–0.15)

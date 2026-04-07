@@ -593,7 +593,7 @@ export default function LoginScreen({ onLogin }) {
   // Signup step-by-step form
   const stepQuestions = {
     age: 'How old are you?',
-    name: 'What do you go by?',
+    name: 'Who do you go by?',
     email: 'What\'s your email?',
     password: 'Create a password'
   };

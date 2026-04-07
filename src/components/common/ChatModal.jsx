@@ -53,6 +53,7 @@ export default function ChatModal({ isOpen, onClose }) {
   const [showHistory, setShowHistory] = useState(false);
   const [editingChatId, setEditingChatId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [suggestionsSliding, setSuggestionsSliding] = useState(false);
   const fileInputRef = useRef(null);
 
   /* derived */
@@ -236,7 +237,16 @@ export default function ChatModal({ isOpen, onClose }) {
       });
     } catch (err) {
       console.error(err);
-      setMessages((prev) => [...prev, { role: "assistant", text: `Error: ${err.message || "Failed to connect"}` }]);
+      let errorMsg = err.message || "Failed to connect";
+      
+      // Better error messages
+      if (errorMsg.includes("Failed to fetch")) {
+        errorMsg = "Backend not running. Start proxy: cd server && npm run dev";
+      } else if (errorMsg.includes("API request failed")) {
+        errorMsg = "API Error: Check console. Backend proxy may not have valid API key.";
+      }
+      
+      setMessages((prev) => [...prev, { role: "assistant", text: `Error: ${errorMsg}` }]);
     } finally {
       setLoading(false);
     }
@@ -248,6 +258,7 @@ export default function ChatModal({ isOpen, onClose }) {
     setActiveChatId(fresh.id);
     setInput("");
     setAttachments([]);
+    setSuggestionsSliding(false);
     setShowHistory(false);
   };
 
@@ -273,6 +284,11 @@ export default function ChatModal({ isOpen, onClose }) {
         return prev;
       });
     }
+  };
+
+  const handleSuggestion = (label) => {
+    setSuggestionsSliding(true);
+    setTimeout(() => send(label), 280);
   };
 
   const visibleSuggestions = showAllSuggestions ? SUGGESTIONS : SUGGESTIONS.slice(0, 3);
@@ -418,10 +434,10 @@ export default function ChatModal({ isOpen, onClose }) {
 
         {/* Suggestions accordion */}
         {messages.length === 0 && (
-          <div className="chat-suggestions">
+          <div className={`chat-suggestions${suggestionsSliding ? ' suggestions-slide-out' : ''}`}>
             <h3 className="chat-suggestions-title">Suggestions</h3>
             {visibleSuggestions.map(({ icon: Icon, label }, i) => (
-              <button key={i} className="chat-suggestion-row" onClick={() => send(label)}>
+              <button key={i} className="chat-suggestion-row" onClick={() => handleSuggestion(label)}>
                 <Icon size={16} className="chat-suggestion-icon" />
                 <span>{label}</span>
               </button>
