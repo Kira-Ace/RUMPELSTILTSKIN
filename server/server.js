@@ -175,12 +175,17 @@ function getGenerationConfig(mode, prompt, purpose) {
 
 async function callGeminiModel(model, payload) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  const data = await response.json();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    const data = await response.json();
 
   if (!response.ok) {
     const message = data.error?.message || 'API Error';
@@ -199,6 +204,9 @@ async function callGeminiModel(model, payload) {
   }
 
   return { text, model };
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function callGeminiWithFallback(payload, models) {
