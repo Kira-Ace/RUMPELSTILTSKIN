@@ -8,6 +8,7 @@ import LoginScreen from './components/screens/LoginScreen.jsx';
 import HomeScreen from './components/screens/HomeScreen.jsx';
 import CalendarScreen from './components/screens/CalendarScreen.jsx';
 import SettingsScreen from './components/screens/SettingsScreen.jsx';
+import TicketsScreen from './components/screens/TicketsScreen.jsx';
 import { initialTasks, RUMPEL_NERF_CALENDAR } from './utils/constants.js';
 import { useDarkMode } from './hooks/useDarkMode.js';
 import { auth, googleProvider } from './utils/firebaseClient';
@@ -111,6 +112,9 @@ export default function App() {
         <>
           <div className={`screen ${tab === "home" ? "" : "hidden"}`}>
             <HomeScreen tasks={tasks} openChatModal={openChatModal}/>
+          </div>
+          <div className={`screen ${tab === "tickets" ? "" : "hidden"}`}>
+            <TicketsScreen />
           </div>
           <div className={`screen ${tab === "calendar" ? "" : "hidden"}`}>
             <CalendarScreen tasks={tasks} setTasks={setTasks} googleToken={googleToken} onTokenExpired={() => { setGoogleToken(null); localStorage.removeItem('google_access_token'); localStorage.removeItem('google_token_expiry'); }}/>

@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import rumpelIcon from "../assets/rumpel.png";
 import { callGeminiChat } from "../../utils/geminiApi.js";
 import { CHAT_SYSTEM_PROMPT, CHAT_TASK_ACTION_PROMPT, CHAT_CONTEXT_CONFIG } from "../../utils/constants.js";
+import { buildKBContext } from "../../utils/knowledgeBase.js";
 import "../../styles/chatmodal.css";
 
 const SUGGESTIONS = [
@@ -284,9 +285,10 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0];
   const messages = activeChat?.messages || [];
   const taskCalendarContext = useMemo(() => buildTaskCalendarContext(tasks), [tasks]);
+  const kbContext = useMemo(() => buildKBContext(), []);
   const chatSystemPrompt = useMemo(
-    () => `${CHAT_SYSTEM_PROMPT}\n\n${CHAT_TASK_ACTION_PROMPT}\n\n${taskCalendarContext}`,
-    [taskCalendarContext]
+    () => [CHAT_SYSTEM_PROMPT, kbContext, CHAT_TASK_ACTION_PROMPT, taskCalendarContext].filter(Boolean).join("\n\n"),
+    [taskCalendarContext, kbContext]
   );
 
   const setMessages = (updater, chatId = activeChatId) => {

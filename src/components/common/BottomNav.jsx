@@ -1,31 +1,22 @@
 import React, { useState } from "react";
-import { Home, CalendarDays, Settings } from "lucide-react";
 import rumpelIcon from "../assets/rumpel.png";
 import scaleDownVine from "../assets/scaledown.png";
 import scaleUpVine from "../assets/scaleup.png";
+import { NAV_TABS, FAB_CONFIG } from "../../utils/appConfig.js";
 
 /**
  * Bottom Navigation component for the Rumpel app.
- * Features a pill-shaped nav container and interactive Rumpel FAB.
+ * Tabs and FAB behavior are driven by appConfig.js — edit that file to customize.
  */
 export default function BottomNav({ active, setActive, openChatModal }) {
-  const tabs = [
-    { id: "home", Icon: Home },
-    { id: "calendar", Icon: CalendarDays },
-    { id: "settings", Icon: Settings },
-  ];
+  const tabs = NAV_TABS;
 
   const [msg, setMsg] = useState("");
   const [reply, setReply] = useState("");
 
   const send = () => {
     if (!msg.trim()) return;
-    const responses = [
-      "Got it! Added to your schedule.",
-      "Great idea! Reminder set?",
-      "Done! You've got this! 🎯",
-      "Added to your study list.",
-    ];
+    const responses = FAB_CONFIG.quickReplies;
     setReply(responses[Math.floor(Math.random() * responses.length)]);
     setMsg("");
     setTimeout(() => setReply(""), 3500);
@@ -49,26 +40,28 @@ export default function BottomNav({ active, setActive, openChatModal }) {
         <img src={scaleUpVine} alt="" className="vine-overlay vine-up" />
       </div>
 
-      <div className="nav-fab-wrap">
-        <div className="fab-chat">
-          {reply && <div className="fab-chat-msg">🧙 {reply}</div>}
-          <div className="fab-chat-row">
-            <input
-              className="fab-chat-input"
-              placeholder="Ask Rumpel…"
-              value={msg}
-              onChange={(e) => setMsg(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && send()}
-            />
-            <button className="fab-chat-send" onClick={send}>
-              <img src={rumpelIcon} alt="Send" style={{width: "16px", height: "16px", filter: "drop-shadow(0.5px 1px 1px rgba(205, 75, 35, 0.75))"}} />
-            </button>
+      {FAB_CONFIG.show && <div className="nav-fab-wrap">
+        {FAB_CONFIG.showQuickInput && (
+          <div className="fab-chat">
+            {reply && <div className="fab-chat-msg">🧙 {reply}</div>}
+            <div className="fab-chat-row">
+              <input
+                className="fab-chat-input"
+                placeholder={FAB_CONFIG.quickInputPlaceholder}
+                value={msg}
+                onChange={(e) => setMsg(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && send()}
+              />
+              <button className="fab-chat-send" onClick={send}>
+                <img src={rumpelIcon} alt="Send" style={{width: "16px", height: "16px", filter: "drop-shadow(0.5px 1px 1px rgba(205, 75, 35, 0.75))"}} />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
         <button className="nav-fab" onClick={() => openChatModal?.("text")}>
           <img src={rumpelIcon} alt="Rumpel" style={{width: "32px", height: "32px", filter: "drop-shadow(1px 2px 2px rgba(183, 81, 47, 0.75))"}} />
         </button>
-      </div>
+      </div>}
     </div>
   );
 }
