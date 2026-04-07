@@ -26,17 +26,74 @@ export default function AboutScreen({ onBack }) {
             </p>
           </div>
 
-          {/* Credits Section */}
+          {/* Citations Section */}
           <div className="about-section">
-            <h2 className="about-section-title">Credits</h2>
+            <h2 className="about-section-title">Citations</h2>
             <div className="about-credits">
               <div className="about-credit-item">
                 <div className="about-credit-name">Development</div>
-                <div className="about-credit-value">Charlie Kirk</div>
+                <div className="about-credit-value" style={{textAlign:"right"}}>
+                  <div>Michael C. Baterna</div>
+                  <div>Nimeesha D. De Guzman</div>
+                  <div>Jazztinn Kyle G. Legaspi</div>
+                </div>
               </div>
               <div className="about-credit-item">
                 <div className="about-credit-name">Design</div>
-                <div className="about-credit-value">Charlie Kirk</div>
+                <div className="about-credit-value" style={{textAlign:"right"}}>
+                  <div>Jazztinn Kyle G. Legaspi</div>
+                  <div>Nimeesha D. De Guzman</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Google AI */}
+          <div className="about-section">
+            <h2 className="about-section-title">Google AI Cloud — APIs Used</h2>
+            <div className="about-credits">
+              <div className="about-credit-item">
+                <div className="about-credit-name">Chat & Reasoning</div>
+                <div className="about-credit-value">Gemini 2.0 Flash</div>
+              </div>
+              <div className="about-credit-item">
+                <div className="about-credit-name">Fast Responses</div>
+                <div className="about-credit-value">Gemini 2.0 Flash-Lite</div>
+              </div>
+              <div className="about-credit-item">
+                <div className="about-credit-name">Calendar Sync</div>
+                <div className="about-credit-value">Google Calendar API</div>
+              </div>
+              <div className="about-credit-item">
+                <div className="about-credit-name">Authentication</div>
+                <div className="about-credit-value">Firebase Auth</div>
+              </div>
+            </div>
+          </div>
+
+          {/* External Services */}
+          <div className="about-section">
+            <h2 className="about-section-title">External Services</h2>
+            <div className="about-credits">
+              <div className="about-credit-item">
+                <div className="about-credit-name">Sign-in Provider</div>
+                <div className="about-credit-value">Google OAuth 2.0</div>
+              </div>
+              <div className="about-credit-item">
+                <div className="about-credit-name">Sign-in Provider</div>
+                <div className="about-credit-value">Facebook Login</div>
+              </div>
+              <div className="about-credit-item">
+                <div className="about-credit-name">Sign-in Provider</div>
+                <div className="about-credit-value">Microsoft Identity</div>
+              </div>
+              <div className="about-credit-item">
+                <div className="about-credit-name">UI Icons</div>
+                <div className="about-credit-value">Lucide React</div>
+              </div>
+              <div className="about-credit-item">
+                <div className="about-credit-name">Fonts</div>
+                <div className="about-credit-value">Google Fonts</div>
               </div>
             </div>
           </div>
@@ -49,16 +106,6 @@ export default function AboutScreen({ onBack }) {
               <div className="about-tech-item">Vite</div>
               <div className="about-tech-item">Firebase</div>
               <div className="about-tech-item">Google Gemini API</div>
-            </div>
-          </div>
-
-          {/* Links Section */}
-          <div className="about-section">
-            <h2 className="about-section-title">Links</h2>
-            <div className="about-links">
-              <a href="#" className="about-link-item">Privacy Policy</a>
-              <a href="#" className="about-link-item">Terms of Service</a>
-              <a href="#" className="about-link-item">Contact Us</a>
             </div>
           </div>
 

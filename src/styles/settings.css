@@ -11,14 +11,12 @@
   align-items: center;
   gap: 14px;
   padding: 18px 16px;
-  background: var(--settings-row-bg);
   border-radius: 14px;
   cursor: pointer;
 }
 
 /* Profile dropdown */
 .settings-profile-dropdown {
-  background: var(--settings-row-bg);
   border-radius: 14px;
   overflow: hidden;
   margin-bottom: 24px;
@@ -121,7 +119,6 @@
 }
 
 .settings-group-card {
-  background: var(--settings-row-bg);
   border-radius: 14px;
   overflow: hidden;
 }
@@ -134,11 +131,6 @@
   gap: 14px; 
   position: relative;
   cursor: pointer;
-  transition: background-color 0.15s ease; 
-}
-
-.settings-row:active {
-  background: var(--bg-dim);
 }
 
 .settings-row-icon { 
