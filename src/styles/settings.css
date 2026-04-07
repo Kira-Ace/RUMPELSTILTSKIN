@@ -13,8 +13,46 @@
   padding: 18px 16px;
   background: var(--settings-row-bg);
   border-radius: 14px;
-  margin-bottom: 24px;
   cursor: pointer;
+}
+
+/* Profile dropdown */
+.settings-profile-dropdown {
+  background: var(--settings-row-bg);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.settings-profile-dropdown .settings-profile-row {
+  border-radius: 0;
+}
+
+.settings-profile-chevron {
+  transition: transform 0.3s ease;
+}
+
+.settings-profile-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.settings-profile-dropdown-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.settings-profile-dropdown.open .settings-profile-dropdown-body {
+  max-height: 300px;
+}
+
+.settings-profile-dropdown-body .settings-row:first-child {
+  border-top: 1px solid var(--outline-v);
+  opacity: 0.4;
+}
+
+.settings-profile-dropdown-body .settings-row:first-child {
+  border-top: 1px solid rgba(0,0,0,0.06);
 }
 
 .settings-profile-avatar {
