@@ -587,6 +587,50 @@ input[type="number"] {
   margin-bottom: 14px;
 }
 
+/* Intent / follow-up option buttons */
+.intent-options {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.intent-detail-options {
+  flex-direction: column;
+}
+
+.intent-option-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 14px 12px;
+  border-radius: 12px;
+  border: 1.5px solid var(--outline, #ccc);
+  background: transparent;
+  color: var(--text, #333);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.intent-detail-options .intent-option-btn {
+  flex: none;
+  text-align: left;
+  padding: 15px 18px;
+}
+
+.intent-option-btn:active {
+  transform: scale(0.97);
+}
+
+.intent-option-btn.selected {
+  border-color: var(--brown, #c46a32);
+  background: var(--brown, #c46a32);
+  color: #fff;
+}
+
 .signup-step-input {
   font-size: 16px !important;
   padding: 16px 18px !important;
@@ -711,5 +755,85 @@ input[type="number"] {
 .password-strength-feedback.valid div:first-child {
   font-weight: 600;
   color: var(--orange);
+}
+
+/* ─── Purpose Step (Work / Personal / Education) ─── */
+.signup-purpose-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.signup-purpose-btn {
+  width: 100%;
+  padding: 16px 20px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(128, 128, 128, 0.18);
+  background: rgba(128, 128, 128, 0.06);
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.signup-purpose-btn:hover {
+  background: rgba(128, 128, 128, 0.12);
+}
+
+.signup-purpose-btn:active {
+  transform: scale(0.97);
+}
+
+.signup-purpose-btn.selected {
+  border-color: var(--accent, #FF7B20);
+  background: rgba(255, 123, 32, 0.1);
+  color: var(--accent, #FF7B20);
+}
+
+.signup-purpose-hint {
+  text-align: center;
+  font-size: 13px;
+  opacity: 0.4;
+  margin: 8px 0 0;
+}
+
+/* ─── Role Step (Dropdown Select) ─── */
+.signup-role-select-wrap {
+  width: 100%;
+}
+
+.signup-role-select {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(128, 128, 128, 0.18);
+  background: rgba(128, 128, 128, 0.06);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  transition: border-color 0.2s;
+}
+
+.signup-role-select:focus {
+  outline: none;
+  border-color: var(--accent, #FF7B20);
+}
+
+.signup-role-select option {
+  background: var(--bg, #1a1a1a);
+  color: var(--text-primary);
+  padding: 10px;
 }
 

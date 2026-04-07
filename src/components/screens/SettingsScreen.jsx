@@ -1,23 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Moon, Volume2, BookOpen, Database, LogOut, ChevronRight, ChevronDown } from 'lucide-react';
+import { Moon, Volume2, BookOpen, LogOut, ChevronRight, ChevronDown } from 'lucide-react';
 import TopBar from '../common/TopBar.jsx';
 import Toggle from '../common/Toggle.jsx';
 import AboutScreen from './AboutScreen.jsx';
-import KnowledgeBaseScreen from './KnowledgeBaseScreen.jsx';
 import { auth } from '../../utils/firebaseClient';
 
 export default function SettingsScreen({ darkMode, setDarkMode, onSignOut }) {
   const [sounds, setSounds] = useState(true);
   const [user, setUser] = useState(null);
   const [showAbout, setShowAbout] = useState(false);
-  const [showKB, setShowKB] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     const currentUser = auth.currentUser;
     if (currentUser) {
       setUser({
-        name: currentUser.displayName || 'Guest',
+        name: currentUser.displayName || 'My App',
         email: currentUser.email || '',
         photoURL: currentUser.photoURL,
       });
@@ -29,13 +27,8 @@ export default function SettingsScreen({ darkMode, setDarkMode, onSignOut }) {
   const profileDropdownItems = [
     { label: "Dark Mode", Icon: Moon, toggle: true, val: darkMode, set: setDarkMode },
     { label: "Sound Effects", Icon: Volume2, toggle: true, val: sounds, set: setSounds },
-    { label: "Knowledge Base", Icon: Database, onClick: () => setShowKB(true) },
     { label: "About Rumpel", Icon: BookOpen, onClick: () => setShowAbout(true) },
   ];
-
-  if (showKB) {
-    return <KnowledgeBaseScreen onBack={() => setShowKB(false)} />;
-  }
 
   if (showAbout) {
     return <AboutScreen onBack={() => setShowAbout(false)} />;

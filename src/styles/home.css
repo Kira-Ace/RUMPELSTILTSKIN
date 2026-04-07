@@ -9,7 +9,7 @@
 
 /* Hero background section */
 .home-hero-section {
-  min-height: 440px;
+  min-height: 280px;
   width: 100%;
   position: relative;
   display: flex;
@@ -88,6 +88,190 @@
   font-size: 20px;
   color: var(--brown);
   letter-spacing: -0.3px;
+}
+
+/* ===== App Widget Cards (horizontal scroll) ===== */
+.home-widgets-scroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 2px 8px;
+  scrollbar-width: none;
+}
+
+.home-widgets-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.app-widget-card {
+  flex: 0 0 200px;
+  scroll-snap-align: start;
+  background:
+    radial-gradient(ellipse at center, rgba(255,255,255,0.22) 0%, transparent 70%),
+    rgba(244, 123, 32, 0.68);
+  backdrop-filter: blur(15px) saturate(1.6);
+  -webkit-backdrop-filter: blur(15px) saturate(1.6);
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Work Sans', sans-serif;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 4px rgba(255, 255, 255, 0.5),
+    inset 0 -2px 8px rgba(0, 0, 0, 0.12),
+    0 4px 16px rgba(0, 0, 0, 0.1);
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+
+.app-widget-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 1px 4px rgba(255, 255, 255, 0.5),
+    inset 0 -2px 8px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.app-widget-card:active {
+  transform: scale(0.97);
+}
+
+/* Header: emoji + title + live dot */
+.app-widget-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.app-widget-emoji {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.app-widget-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.2px;
+  flex: 1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.app-widget-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #fff;
+  animation: widgetPulse 2s ease-in-out infinite;
+}
+
+@keyframes widgetPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* Notification alert block */
+.app-widget-notif {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255,255,255,0.25);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 10px;
+  padding: 10px 11px;
+}
+
+.app-widget-notif-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: rgba(255,255,255,0.85);
+}
+
+.app-widget-notif-body {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #fff;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.app-widget-notif-time {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.6);
+  margin-top: 2px;
+}
+
+/* Quick stats row */
+.app-widget-stats {
+  display: flex;
+  gap: 0;
+}
+
+.app-widget-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.app-widget-stat-value {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.app-widget-stat-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* Add Widget placeholder card */
+.app-widget-add {
+  flex: 0 0 120px;
+  border: 2px dashed rgba(255, 255, 255, 0.45);
+  background:
+    radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, transparent 70%),
+    rgba(244, 123, 32, 0.35);
+  backdrop-filter: blur(15px) saturate(1.6);
+  -webkit-backdrop-filter: blur(15px) saturate(1.6);
+  opacity: 0.7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255,255,255,0.8);
+  font-family: 'Work Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: none;
+  transition: opacity 0.18s, transform 0.18s;
+}
+
+.app-widget-add:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  box-shadow: none;
 }
 
 /* Tasks preview */

@@ -55,12 +55,16 @@ const playButtonSound = () => {
 
 export default function LoginScreen({ onLogin }) {
   const [mode, setMode] = useState(null); // null, 'signup', or 'login'
-  const [step, setStep] = useState(0); // 0: name, 1: email, 2: password
+  const [step, setStep] = useState(0); // 0: intent, 1: intent follow-up (conditional), 2: name, 3: email, 4: password
   const [previousStep, setPreviousStep] = useState(null); // for animation
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [intent, setIntent] = useState(null); // 'personal' | 'student' | 'business'
+  const [intentDetail, setIntentDetail] = useState(null); // Q1 follow-up
+  const [intentDetail2, setIntentDetail2] = useState(null); // Q2 follow-up (business only)
+  const [intentDetail3, setIntentDetail3] = useState(null); // Q3 follow-up (business only)
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [isStepTransitioning, setIsStepTransitioning] = useState(false);
@@ -86,7 +90,9 @@ export default function LoginScreen({ onLogin }) {
     }
   }, [mode, welcomePhrases.length]);
 
-  const steps = ['name', 'email', 'password'];
+  const intentExtraSteps = intent === 'business' ? ['intentDetail', 'intentDetail2', 'intentDetail3'] : intent === 'student' ? ['intentDetail'] : [];
+  const steps = ['intent', ...intentExtraSteps, 'name', 'email', 'password'];
+  const totalSteps = steps.length;
   const currentStep = mode === 'signup' ? steps[step] : null;
   const hasSyncedEmail = Boolean(syncedEmail.trim());
   const resolvedEmail = email.trim() || syncedEmail.trim();
@@ -98,6 +104,10 @@ export default function LoginScreen({ onLogin }) {
     setEmail('');
     setPassword('');
     setName('');
+    setIntent(null);
+    setIntentDetail(null);
+    setIntentDetail2(null);
+    setIntentDetail3(null);
     setIsTransitioning(false);
     setIsStepTransitioning(false);
     setValidationError('');
@@ -124,7 +134,7 @@ export default function LoginScreen({ onLogin }) {
   const isPasswordRequired = !hasSyncedEmail;
 
   const handleNext = () => {
-    if (step < 2) {
+    if (step < totalSteps - 1) {
       setIsStepTransitioning(true);
       setPreviousStep(step);
       setStep(step + 1);
@@ -290,12 +300,17 @@ export default function LoginScreen({ onLogin }) {
   };
 
   const isNextDisabled = () => {
-    if (step === 0) return !name.trim();
-    if (step === 1) {
+    const s = currentStep;
+    if (s === 'intent') return !intent;
+    if (s === 'intentDetail') return !intentDetail;
+    if (s === 'intentDetail2') return !intentDetail2;
+    if (s === 'intentDetail3') return !intentDetail3;
+    if (s === 'name') return !name.trim();
+    if (s === 'email') {
       if (hasSyncedEmail && !email.trim()) return false;
       return !email.trim() || Boolean(validationError);
     }
-    if (step === 2) {
+    if (s === 'password') {
       if (!password.trim()) {
         return isPasswordRequired;
       }
@@ -637,7 +652,40 @@ export default function LoginScreen({ onLogin }) {
   }
 
   // Signup step-by-step form
+  const intentOptions = [
+    { value: 'personal', label: 'Personal' },
+    { value: 'student', label: 'Student' },
+    { value: 'business', label: 'Business' },
+  ];
+
+  const intentFollowUpConfig = {
+    student: {
+      intentDetail: {
+        question: 'Does your school use a learning management system?',
+        options: ['Canvas', 'Blackboard', 'Moodle', 'Google Classroom', 'Other', 'Not sure'],
+      },
+    },
+    business: {
+      intentDetail: {
+        question: 'What does your team handle most?',
+        options: ['Customer Support', 'Sales', 'Operations', 'IT / Technical', 'Other'],
+      },
+      intentDetail2: {
+        question: 'How large is your team?',
+        options: ['Just me', '2–10', '11–50', '50+'],
+      },
+      intentDetail3: {
+        question: 'How do customers typically reach you?',
+        options: ['Email', 'Live Chat', 'Phone', 'Social Media', 'Multiple channels'],
+      },
+    },
+  };
+
   const stepQuestions = {
+    intent: 'What do you intend to use Rumpel for?',
+    intentDetail: intentFollowUpConfig[intent]?.intentDetail?.question || '',
+    intentDetail2: intentFollowUpConfig[intent]?.intentDetail2?.question || '',
+    intentDetail3: intentFollowUpConfig[intent]?.intentDetail3?.question || '',
     name: 'Who do you go by?',
     email: 'What\'s your email?',
     password: 'Create a password'
@@ -670,7 +718,7 @@ export default function LoginScreen({ onLogin }) {
         
         {/* Progress Dashes */}
         <div className="signup-progress-dashes">
-          {[0, 1, 2].map((i) => (
+          {Array.from({length: totalSteps}, (_, i) => i).map((i) => (
             <div 
               key={i} 
               className={`progress-dash ${i === step ? 'active' : i < step ? 'completed' : ''}`}
@@ -688,7 +736,7 @@ export default function LoginScreen({ onLogin }) {
 
       <div className="login-container signup-step-container">
         {/* Question - ALWAYS use wrapper to prevent layout shift */}
-        <div style={{ position: 'relative', width: '100%', overflow: 'hidden', height: '85px', margin: '0 0 -24px 0' }}>
+        <div style={{ position: 'relative', width: '100%', overflow: 'hidden', height: (['intent','intentDetail','intentDetail2','intentDetail3'].includes(currentStep)) ? '100px' : '85px', marginBottom: (['intent','intentDetail','intentDetail2','intentDetail3'].includes(currentStep)) ? '8px' : '-24px' }}>
           <h1 
             className={`signup-step-title ${isStepTransitioning && previousStep !== null ? 'slide-out' : ''}`}
             style={{ 
@@ -719,7 +767,41 @@ export default function LoginScreen({ onLogin }) {
 
         {/* Input */}
         <div className="signup-step-form">
-          {currentStep === 'password' ? (
+          {currentStep === 'intent' ? (
+            <div className="intent-options">
+              {intentOptions.map(opt => (
+                <button
+                  key={opt.value}
+                  className={`intent-option-btn ${intent === opt.value ? 'selected' : ''}`}
+                  onClick={() => {
+                    playButtonSound();
+                    setIntent(opt.value);
+                    setIntentDetail(null);
+                    setIntentDetail2(null);
+                    setIntentDetail3(null);
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          ) : currentStep === 'intentDetail' || currentStep === 'intentDetail2' || currentStep === 'intentDetail3' ? (
+            <div className="intent-options intent-detail-options">
+              {(intentFollowUpConfig[intent]?.[currentStep]?.options || []).map(opt => {
+                const val = currentStep === 'intentDetail' ? intentDetail : currentStep === 'intentDetail2' ? intentDetail2 : intentDetail3;
+                const setter = currentStep === 'intentDetail' ? setIntentDetail : currentStep === 'intentDetail2' ? setIntentDetail2 : setIntentDetail3;
+                return (
+                  <button
+                    key={opt}
+                    className={`intent-option-btn ${val === opt ? 'selected' : ''}`}
+                    onClick={() => { playButtonSound(); setter(opt); }}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          ) : currentStep === 'password' ? (
             <div>
               <div className="login-password-wrapper">
                 <input
@@ -795,28 +877,6 @@ export default function LoginScreen({ onLogin }) {
         >
           NEXT
         </button>
-
-        {/* Spacer for social buttons at bottom */}
-        <div className="signup-step-spacer" />
-
-        {/* Divider */}
-        <div className="login-divider signup-divider">OR</div>
-
-        {/* Social Login Buttons */}
-        <div className="signup-step-social">
-          <button className="login-social-btn google" onClick={handleGoogleLogin}>
-            <img src={googleLogo} alt="Google" width="20" height="20" />
-            <span>Continue with Google</span>
-          </button>
-          <button className="login-social-btn facebook" onClick={handleFacebookLogin}>
-            <img src={facebookLogo} alt="Facebook" width="20" height="20" />
-            <span>Continue with Facebook</span>
-          </button>
-          <button className="login-social-btn microsoft" onClick={handleMicrosoftLogin}>
-            <img src={microsoftLogo} alt="Microsoft" width="20" height="20" />
-            <span>Continue with Microsoft</span>
-          </button>
-        </div>
 
         {/* Terms & Privacy */}
         <p className="login-terms">

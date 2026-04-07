@@ -433,7 +433,7 @@ export default function CalendarScreen({ tasks, setTasks, googleToken, onTokenEx
         {/* Tasks */}
         <div className="tasks-scroll">
           {selTasks.map((t, i) => {
-            const tagColors = {"Math": "#5B8DEE", "Science":"#EA4335", "English":"#FBBC04", "History":"#34A853", "Other":"#FA7B17", "Google":"#4285F4"};
+            const tagColors = {"Billing": "#5B8DEE", "Technical":"#EA4335", "General":"#FBBC04", "Urgent":"#34A853", "Other":"#FA7B17", "Google":"#4285F4"};
             const tagColor = tagColors[t.tag] || "#9E9E9E";
             return (
               <div key={t.id} className={`task-card ${t.accent ? "accent" : ""} ${t.isGoogleEvent ? "google-event" : ""}`}>

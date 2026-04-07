@@ -22,7 +22,7 @@ export default function AboutScreen({ onBack }) {
           {/* Description */}
           <div className="about-section">
             <p className="about-description">
-              Rumpel is an AI-powered customer support auto-responder, helping businesses resolve tickets faster, manage interactions, and deliver great service.
+              Rumpel is an AI-powered customer support auto-responder, helping businesses manage inquiries, resolve issues faster, and deliver great customer experiences.
             </p>
           </div>
 
@@ -111,7 +111,7 @@ export default function AboutScreen({ onBack }) {
 
           {/* Footer */}
           <div className="about-footer">
-            <p>Built for teams that care about their customers</p>
+            <p>Built for businesses that value great support</p>
             <p className="about-copyright">© 2026 Rumpel. All rights reserved.</p>
           </div>
         </div>

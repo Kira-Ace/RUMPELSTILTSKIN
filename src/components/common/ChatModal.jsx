@@ -1,20 +1,63 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { X, Menu, ChevronDown, Plus, Zap, Circle, Loader2, Send, FileText, Search, LayoutGrid, XCircle, MessageSquare, Trash2, Pencil, Check, Mic, MicOff, Volume2 } from "lucide-react";
+import { X, Menu, ChevronDown, Plus, Zap, Circle, Loader2, Send, FileText, Search, LayoutGrid, Paperclip, Image as ImageIcon, XCircle, MessageSquare, Trash2, Pencil, Check, Lightbulb } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rumpelIcon from "../assets/rumpel.png";
+import rumpelTextLogo from "../assets/rumpeltext.png";
+import spotifyLogo from "../assets/spotify.png";
+import shopeeLogo from "../assets/shopee.png";
+import carousellLogo from "../assets/carousell.png";
+import canvasLogo from "../assets/canvas.png";
 import { callGeminiChat } from "../../utils/geminiApi.js";
-import { CHAT_SYSTEM_PROMPT, CHAT_TASK_ACTION_PROMPT, CHAT_CONTEXT_CONFIG } from "../../utils/constants.js";
-import { buildKBContext } from "../../utils/knowledgeBase.js";
+import { CHAT_SYSTEM_PROMPT, CHAT_TASK_ACTION_PROMPT, CHAT_CONTEXT_CONFIG, APP_INTEGRATIONS } from "../../utils/constants.js";
+import AppDrumRoller from "./AppDrumRoller.jsx";
 import "../../styles/chatmodal.css";
 
-const SUGGESTIONS = [
-  { icon: FileText, label: "Draft a Response", prompt: "Help me draft a customer support response. Ask what the customer's issue is and what tone I should use." },
-  { icon: Search, label: "Search Knowledge Base", prompt: "Help me find relevant information from our knowledge base. Ask what topic or issue I need help with." },
-  { icon: LayoutGrid, label: "Ticket Overview", prompt: "Give me a summary of the current ticket and suggest next steps." },
-  { icon: FileText, label: "Summarize Conversation", prompt: "Summarize this customer interaction into key points and action items." },
-  { icon: Search, label: "Troubleshoot Issue", prompt: "Help me troubleshoot a customer's technical issue. Ask what the problem is and what they've already tried." },
-];
+const SUGGESTIONS_BY_APP = {
+  rumpel: [
+    { icon: FileText, label: "Draft a Reply", prompt: "Help me draft a professional reply to a customer inquiry. Ask what the issue is and what tone I should use." },
+    { icon: Search, label: "Find a Solution", prompt: "Help me find a solution to a customer's problem. Ask what the issue is and what I've already tried." },
+    { icon: LayoutGrid, label: "Summarize Ticket", prompt: "Summarize this support ticket into key issues, actions taken, and next steps." },
+    { icon: FileText, label: "Write FAQ Entry", prompt: "Help me write a clear FAQ entry. Ask what question customers are asking and what the answer should cover." },
+    { icon: Search, label: "Escalation Template", prompt: "Help me write an escalation note for a ticket that needs to be handed off to a specialist." },
+  ],
+  spotify: [
+    { icon: Search, label: "New Releases", prompt: "Did any of my favorite artists release new songs or albums recently?" },
+    { icon: LayoutGrid, label: "Playlist Ideas", prompt: "Suggest a themed playlist based on my listening habits. Ask me what mood or occasion I'm planning for." },
+    { icon: FileText, label: "Spotify Recap", prompt: "When is the next Spotify Wrapped? Give me a summary of what to expect." },
+    { icon: Search, label: "Song Recommendations", prompt: "Recommend songs I might like based on my recent listening history." },
+    { icon: FileText, label: "Fix Playback Issue", prompt: "I'm having a playback issue with Spotify. Help me troubleshoot it." },
+  ],
+  shopee: [
+    { icon: Search, label: "Track My Order", prompt: "Help me track my recent Shopee orders. What's the delivery status?" },
+    { icon: LayoutGrid, label: "Find Deals", prompt: "What are the best deals or flash sales happening on Shopee right now?" },
+    { icon: FileText, label: "Return an Item", prompt: "Help me start a return or refund for a recent Shopee purchase." },
+    { icon: Search, label: "Compare Products", prompt: "Help me compare products on Shopee. Ask me what I'm looking for." },
+    { icon: FileText, label: "Check Vouchers", prompt: "What vouchers or coin cashback do I have available on Shopee?" },
+  ],
+  carousell: [
+    { icon: FileText, label: "Write a Listing", prompt: "Help me write a compelling Carousell listing. Ask me what I'm selling." },
+    { icon: Search, label: "Price My Item", prompt: "Help me price my item competitively on Carousell. Ask me what it is and its condition." },
+    { icon: LayoutGrid, label: "Reply to Buyer", prompt: "Help me draft a reply to a buyer's inquiry on Carousell. I'll share the message." },
+    { icon: FileText, label: "Boost Listing Tips", prompt: "Give me tips to make my Carousell listing get more views and sell faster." },
+    { icon: Search, label: "Negotiate Offer", prompt: "A buyer made an offer on my listing. Help me decide whether to accept or counter." },
+  ],
+  lms: [
+    { icon: Search, label: "Due This Week", prompt: "What assignments or tasks are due this week in my courses?" },
+    { icon: FileText, label: "Summarize Notes", prompt: "Help me summarize my lecture notes. I'll share or describe them." },
+    { icon: LayoutGrid, label: "Draft Discussion", prompt: "Help me draft a discussion board response for my class." },
+    { icon: Search, label: "Study Plan", prompt: "Help me create a study plan for my upcoming exams. Ask me about my courses and dates." },
+    { icon: FileText, label: "Check My Grades", prompt: "Help me understand my current grade standing and what I need to improve." },
+  ],
+};
+
+const PLACEHOLDER_BY_APP = {
+  rumpel: "Message Rumpel…",
+  spotify: "Ask about your music…",
+  shopee: "Ask about your orders…",
+  carousell: "Ask about your listings…",
+  lms: "Ask about your courses…",
+};
 
 /* Snap points as % of parent height */
 const SNAP_MIN = 0.38;   // collapsed
@@ -25,7 +68,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
 const MARKDOWN_PLUGINS = [remarkGfm];
 const TASK_ACTION_BLOCK_RE = /<task-actions>([\s\S]*?)<\/task-actions>/i;
-const VALID_TASK_TAGS = new Set(["Billing", "Technical", "General", "Feedback", "Other"]);
+const VALID_TASK_TAGS = new Set(["Billing", "Technical", "General", "Urgent", "Other"]);
 const MAX_QUESTION_OPTIONS = 5;
 
 function parseDateKey(key) {
@@ -116,27 +159,6 @@ function stripJsonFence(text) {
   const trimmed = text.trim();
   const fenceMatch = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(trimmed);
   return fenceMatch ? fenceMatch[1].trim() : trimmed;
-}
-
-function getSpeechRecognitionErrorMessage(errorCode) {
-  if (errorCode === "not-allowed") return "Microphone permission was denied.";
-  if (errorCode === "audio-capture") return "No microphone was found on this device.";
-  if (errorCode === "network") return "Speech recognition network issue. Try again.";
-  if (errorCode === "no-speech") return "No speech detected. Try again.";
-  return "Voice input failed. Please try again.";
-}
-
-function stripMarkdownForSpeech(text) {
-  if (typeof text !== "string") return "";
-
-  return text
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/[>#*_~]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function normalizeTaskForCreation(rawTask) {
@@ -244,7 +266,7 @@ async function generateTitle(messages) {
   }
 }
 
-export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks = {}, setTasks }) {
+export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
   const nextChatIdRef = useRef(1);
   const nextMessageIdRef = useRef(1);
 
@@ -269,26 +291,22 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
   const [editingChatId, setEditingChatId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [suggestionsSliding, setSuggestionsSliding] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const [questionDrafts, setQuestionDrafts] = useState({});
-  const [inputMode, setInputMode] = useState(() => (entryMode === "voice" ? "voice" : "text"));
-  const [voiceSupported, setVoiceSupported] = useState(true);
-  const [isListening, setIsListening] = useState(false);
-  const [voiceDraft, setVoiceDraft] = useState("");
-  const [voiceError, setVoiceError] = useState("");
+  const [selectedAppIndex, setSelectedAppIndex] = useState(0);
   const fileInputRef = useRef(null);
-  const recognitionRef = useRef(null);
-  const finalTranscriptRef = useRef("");
-  const speechUtteranceRef = useRef(null);
-  const lastSpokenMessageIdRef = useRef(null);
+
+  const APP_LOGO_MAP = { rumpel: rumpelTextLogo, spotify: spotifyLogo, shopee: shopeeLogo, carousell: carousellLogo, lms: canvasLogo };
+  const appItems = APP_INTEGRATIONS.map((app) => ({ ...app, logo: APP_LOGO_MAP[app.id] || rumpelTextLogo }));
 
   /* derived */
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0];
   const messages = activeChat?.messages || [];
   const taskCalendarContext = useMemo(() => buildTaskCalendarContext(tasks), [tasks]);
-  const kbContext = useMemo(() => buildKBContext(), []);
+  const selectedApp = APP_INTEGRATIONS[selectedAppIndex] || APP_INTEGRATIONS[0];
   const chatSystemPrompt = useMemo(
-    () => [CHAT_SYSTEM_PROMPT, kbContext, CHAT_TASK_ACTION_PROMPT, taskCalendarContext].filter(Boolean).join("\n\n"),
-    [taskCalendarContext, kbContext]
+    () => `${CHAT_SYSTEM_PROMPT}\n\n${selectedApp.contextPrompt}\n\n${CHAT_TASK_ACTION_PROMPT}\n\n${taskCalendarContext}`,
+    [taskCalendarContext, selectedApp]
   );
 
   const setMessages = (updater, chatId = activeChatId) => {
@@ -304,42 +322,6 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
   const setChatTitle = (id, title) => {
     setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)));
   };
-
-  const clearVoiceDraft = useCallback(() => {
-    finalTranscriptRef.current = "";
-    setVoiceDraft("");
-  }, []);
-
-  const stopSpeaking = useCallback(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    speechUtteranceRef.current = null;
-  }, []);
-
-  const stopVoiceCapture = useCallback(() => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {
-        // no-op
-      }
-    }
-    setIsListening(false);
-  }, []);
-
-  const startVoiceCapture = useCallback(() => {
-    if (!voiceSupported || !recognitionRef.current || loading) return;
-    setVoiceError("");
-    try {
-      recognitionRef.current.start();
-      setIsListening(true);
-    } catch (error) {
-      if (error?.name !== "InvalidStateError") {
-        setVoiceError("Couldn't start microphone. Check browser permission and try again.");
-        setIsListening(false);
-      }
-    }
-  }, [loading, voiceSupported]);
 
   const sendQuestionReply = (questionKey) => {
     const reply = (questionDrafts[questionKey] || "").trim();
@@ -360,8 +342,6 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
 
   const requestClose = useCallback(() => {
     if (isClosing) return;
-    stopVoiceCapture();
-    stopSpeaking();
     clearTimeout(closeTimerRef.current);
     setIsClosing(true);
     closeTimerRef.current = setTimeout(() => {
@@ -369,7 +349,7 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
       setIsClosing(false);
       onClose();
     }, 260);
-  }, [isClosing, onClose, stopSpeaking, stopVoiceCapture]);
+  }, [isClosing, onClose]);
 
   /* reset height when modal opens */
   useEffect(() => {
@@ -378,116 +358,10 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
       setIsRendered(true);
       setIsClosing(false);
       setSheetHeight(SNAP_MID);
-      setInputMode(entryMode === "voice" ? "voice" : "text");
-      setVoiceError("");
-      if (entryMode !== "voice") {
-        clearVoiceDraft();
-      }
     }
-  }, [isOpen, entryMode, clearVoiceDraft]);
+  }, [isOpen]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-
-    const SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognitionApi) {
-      setVoiceSupported(false);
-      return undefined;
-    }
-
-    const recognition = new SpeechRecognitionApi();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-
-    recognition.onresult = (event) => {
-      let interimTranscript = "";
-
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const transcript = event.results[i][0]?.transcript || "";
-        if (event.results[i].isFinal) {
-          finalTranscriptRef.current = `${finalTranscriptRef.current} ${transcript}`.trim();
-        } else {
-          interimTranscript += transcript;
-        }
-      }
-
-      setVoiceDraft(`${finalTranscriptRef.current} ${interimTranscript}`.trim());
-      setVoiceError("");
-    };
-
-    recognition.onerror = (event) => {
-      setVoiceError(getSpeechRecognitionErrorMessage(event.error));
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognitionRef.current = recognition;
-    setVoiceSupported(true);
-
-    return () => {
-      recognition.onresult = null;
-      recognition.onerror = null;
-      recognition.onend = null;
-      try {
-        recognition.stop();
-      } catch {
-        // no-op
-      }
-      recognitionRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isOpen && inputMode === "voice") {
-      startVoiceCapture();
-      return;
-    }
-
-    stopVoiceCapture();
-  }, [isOpen, inputMode, startVoiceCapture, stopVoiceCapture]);
-
-  useEffect(() => {
-    if (!isOpen || inputMode !== "voice") return;
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
-    const latestAssistantMessage = [...messages].reverse().find(
-      (message) =>
-        message.role === "assistant" &&
-        !message.pending &&
-        typeof message.text === "string" &&
-        message.text.trim()
-    );
-
-    if (!latestAssistantMessage) return;
-    if (latestAssistantMessage.id === lastSpokenMessageIdRef.current) return;
-
-    const speechText = stripMarkdownForSpeech(latestAssistantMessage.text);
-    if (!speechText || speechText.toLowerCase().startsWith("error:")) return;
-
-    stopSpeaking();
-    const utterance = new SpeechSynthesisUtterance(speechText);
-    utterance.rate = 1;
-    utterance.pitch = 1;
-    utterance.onend = () => {
-      if (speechUtteranceRef.current === utterance) {
-        speechUtteranceRef.current = null;
-      }
-    };
-
-    speechUtteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-    lastSpokenMessageIdRef.current = latestAssistantMessage.id;
-  }, [messages, inputMode, isOpen, stopSpeaking]);
-
-  useEffect(() => () => {
-    clearTimeout(closeTimerRef.current);
-    stopVoiceCapture();
-    stopSpeaking();
-  }, [stopVoiceCapture, stopSpeaking]);
+  useEffect(() => () => clearTimeout(closeTimerRef.current), []);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -697,8 +571,6 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
     setActiveChatId(fresh.id);
     setInput("");
     setAttachments([]);
-    clearVoiceDraft();
-    setVoiceError("");
     setQuestionDrafts({});
     setSuggestionsSliding(false);
     setShowHistory(false);
@@ -708,8 +580,6 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
     setActiveChatId(id);
     setInput("");
     setAttachments([]);
-    clearVoiceDraft();
-    setVoiceError("");
     setQuestionDrafts({});
     setShowHistory(false);
   };
@@ -725,38 +595,17 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
     });
   };
 
+  const currentSuggestions = SUGGESTIONS_BY_APP[selectedApp.id] || SUGGESTIONS_BY_APP.rumpel;
+  const currentPlaceholder = PLACEHOLDER_BY_APP[selectedApp.id] || PLACEHOLDER_BY_APP.rumpel;
+
   const handleSuggestion = (label) => {
     if (loading) return;
-    const suggestion = SUGGESTIONS.find((item) => item.label === label);
+    const suggestion = currentSuggestions.find((item) => item.label === label);
     setSuggestionsSliding(true);
     send(suggestion?.prompt || label);
   };
 
-  const toggleVoiceCapture = () => {
-    if (isListening) {
-      stopVoiceCapture();
-      return;
-    }
-
-    startVoiceCapture();
-  };
-
-  const sendVoiceDraft = () => {
-    const transcript = voiceDraft.trim();
-    if (!transcript || loading) return;
-
-    stopVoiceCapture();
-    clearVoiceDraft();
-    send(transcript);
-  };
-
-  const toggleInputMode = () => {
-    setVoiceError("");
-    setInputMode((prev) => (prev === "voice" ? "text" : "voice"));
-  };
-
-  const visibleSuggestions = showAllSuggestions ? SUGGESTIONS : SUGGESTIONS.slice(0, 3);
-  const hasVoiceDraft = voiceDraft.trim().length > 0;
+  const visibleSuggestions = showAllSuggestions ? currentSuggestions : currentSuggestions.slice(0, 2);
 
   if (!isRendered) return null;
 
@@ -776,14 +625,18 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
           <div className="chat-sheet-pill" />
         </div>
 
-        {/* Header */}
+        {/* Header with inline app switcher drum roller */}
         <div className="chat-modal-header">
           <button className="chat-header-btn" onClick={() => setShowHistory((v) => !v)}>
             <Menu size={20} />
           </button>
-          <button className="chat-new-btn" onClick={handleNewChat}>
-            {activeChat?.title || "New Chat"}
-          </button>
+          <div className="chat-header-roller">
+            <AppDrumRoller
+              items={appItems}
+              selectedIndex={selectedAppIndex}
+              onChange={setSelectedAppIndex}
+            />
+          </div>
           <button className="chat-header-btn" onClick={requestClose}>
             <X size={20} />
           </button>
@@ -794,6 +647,9 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
           <div className="chat-history-panel">
             <div className="chat-history-top">
               <span className="chat-history-title">Your Chats</span>
+              <button className="chat-history-new-btn" onClick={handleNewChat} title="New chat">
+                <Plus size={16} />
+              </button>
             </div>
             <div className="chat-history-list">
               {chats.map((c) => (
@@ -971,126 +827,80 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
         </div>
 
         {/* Suggestions accordion */}
-        {messages.length === 0 && (
-          <div className={`chat-suggestions${suggestionsSliding ? ' suggestions-slide-out' : ''}`}>
-            <h3 className="chat-suggestions-title">Suggestions</h3>
-            {visibleSuggestions.map(({ icon: Icon, label }, i) => (
-              <button key={i} className="chat-suggestion-row" onClick={() => handleSuggestion(label)} disabled={loading}>
-                <Icon size={16} className="chat-suggestion-icon" />
-                <span>{label}</span>
-              </button>
-            ))}
-            {SUGGESTIONS.length > 3 && (
-              <button
-                className="chat-suggestion-row chat-suggestion-more"
-                onClick={() => setShowAllSuggestions((v) => !v)}
-              >
-                <ChevronDown
-                  size={16}
-                  className="chat-suggestion-icon"
-                  style={{ transform: showAllSuggestions ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}
-                />
-                <span>{showAllSuggestions ? "Show Less" : `Show ${SUGGESTIONS.length - 3} More`}</span>
-              </button>
-            )}
+        {showSuggestions && (
+          <div key={`suggestions-${selectedAppIndex}`} className={`chat-suggestions${suggestionsSliding ? ' suggestions-slide-out' : ' suggestions-slide-in'}`}>
+            <div className="chat-suggestion-chips">
+              {visibleSuggestions.map(({ icon: Icon, label }, i) => (
+                <button key={i} className="chat-suggestion-chip" onClick={() => handleSuggestion(label)} disabled={loading}>
+                  <Icon size={13} className="chat-suggestion-chip-icon" />
+                  <span>{label}</span>
+                </button>
+              ))}
+              {currentSuggestions.length > 2 && (
+                <button
+                  className="chat-suggestion-chip chat-suggestion-chip-more"
+                  onClick={() => setShowAllSuggestions((v) => !v)}
+                >
+                  <ChevronDown
+                    size={13}
+                    style={{ transform: showAllSuggestions ? "rotate(180deg)" : "none", transition: "transform 0.2s", flexShrink: 0 }}
+                  />
+                  <span>{showAllSuggestions ? "Less" : `+${currentSuggestions.length - 2}`}</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
 
         {/* Input */}
         <div className="chat-modal-input-area">
-          {/* Hidden file input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,.pdf,.txt,.md,.csv,.json"
-            multiple
-            style={{ display: "none" }}
-            onChange={handleFileSelect}
-          />
-
-          {inputMode === "voice" ? (
-            <div className="chat-voice-panel">
-              <div className="chat-voice-status">
-                <Volume2 size={14} />
-                <span>{isListening ? "Listening…" : "Voice mode ready"}</span>
-              </div>
-              <div className={`chat-voice-transcript ${hasVoiceDraft ? "has-content" : ""}`} aria-live="polite">
-                {hasVoiceDraft
-                  ? voiceDraft
-                  : "Tap the mic and speak. Your words appear here in real time."}
-              </div>
-              {!voiceSupported && (
-                <div className="chat-voice-error">Voice input is not supported in this browser. Switch to text mode to continue.</div>
-              )}
-              {voiceError && (
-                <div className="chat-voice-error">{voiceError}</div>
-              )}
-              <div className="chat-voice-actions">
-                <button
-                  type="button"
-                  className={`chat-voice-btn ${isListening ? "chat-voice-btn-live" : ""}`}
-                  onClick={toggleVoiceCapture}
-                  disabled={!voiceSupported || loading}
-                >
-                  {isListening ? <MicOff size={16} /> : <Mic size={16} />}
-                  <span>{isListening ? "Stop" : "Talk"}</span>
-                </button>
-                <button
-                  type="button"
-                  className="chat-voice-send-btn"
-                  onClick={sendVoiceDraft}
-                  disabled={loading || !hasVoiceDraft}
-                >
-                  <Send size={15} />
-                  <span>Send</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Attachment previews */}
-              {attachments.length > 0 && (
-                <div className="chat-attach-preview-row">
-                  {attachments.map((a, i) => (
-                    <div key={i} className="chat-attach-preview">
-                      {a.preview
-                        ? <img src={a.preview} alt={a.name} className="chat-attach-preview-img" />
-                        : <span className="chat-attach-preview-name">📎 {a.name}</span>
-                      }
-                      <button className="chat-attach-remove" onClick={() => removeAttachment(i)}>
-                        <XCircle size={14} />
-                      </button>
-                    </div>
-                  ))}
+          {/* Attachment previews */}
+          {attachments.length > 0 && (
+            <div className="chat-attach-preview-row">
+              {attachments.map((a, i) => (
+                <div key={i} className="chat-attach-preview">
+                  {a.preview
+                    ? <img src={a.preview} alt={a.name} className="chat-attach-preview-img" />
+                    : <span className="chat-attach-preview-name">📎 {a.name}</span>
+                  }
+                  <button className="chat-attach-remove" onClick={() => removeAttachment(i)}>
+                    <XCircle size={14} />
+                  </button>
                 </div>
-              )}
-              <div className="chat-input-row">
-                <input
-                  type="text"
-                  className="chat-input"
-                  placeholder="Message Rumpel…"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !loading && send()}
-                  disabled={loading}
-                />
-                <button
-                  className="chat-send-btn"
-                  onClick={() => send()}
-                  disabled={loading || (!input.trim() && attachments.length === 0)}
-                >
-                  {loading ? <Loader2 size={18} className="spin" /> : <Send size={18} />}
-                </button>
-              </div>
-            </>
+              ))}
+            </div>
           )}
-
+          <div className="chat-input-row">
+            <input
+              type="text"
+              className="chat-input"
+              placeholder={currentPlaceholder}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !loading && send()}
+              disabled={loading}
+            />
+            <button
+              className="chat-send-btn"
+              onClick={() => send()}
+              disabled={loading || (!input.trim() && attachments.length === 0)}
+            >
+              {loading ? <Loader2 size={18} className="spin" /> : <Send size={18} />}
+            </button>
+          </div>
           <div className="chat-input-tags">
-            {inputMode !== "voice" && (
-              <button className="chat-tag-btn" onClick={() => fileInputRef.current?.click()}>
-                <Plus size={14} />
-              </button>
-            )}
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf,.txt,.md,.csv,.json"
+              multiple
+              style={{ display: "none" }}
+              onChange={handleFileSelect}
+            />
+            <button className="chat-tag-btn" onClick={() => fileInputRef.current?.click()}>
+              <Plus size={14} />
+            </button>
             <button
               className={`chat-tag-btn ${mode === "fast" ? "chat-tag-active" : ""}`}
               onClick={() => setMode("fast")}
@@ -1104,10 +914,21 @@ export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks =
               <Circle size={14} /> Auto
             </button>
             <button
-              className={`chat-tag-btn ${inputMode === "voice" ? "chat-tag-active" : ""}`}
-              onClick={toggleInputMode}
+              className={`chat-tag-btn ${showSuggestions ? "chat-tag-active" : ""}`}
+              onClick={() => {
+                if (showSuggestions) {
+                  setSuggestionsSliding(true);
+                  setTimeout(() => {
+                    setShowSuggestions(false);
+                    setSuggestionsSliding(false);
+                  }, 220);
+                } else {
+                  setShowSuggestions(true);
+                }
+              }}
+              title="Toggle suggestions"
             >
-              {inputMode === "voice" ? <MicOff size={14} /> : <Mic size={14} />} Voice
+              <Lightbulb size={14} />
             </button>
           </div>
         </div>

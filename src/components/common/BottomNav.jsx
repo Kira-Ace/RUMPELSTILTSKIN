@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import rumpelIcon from "../assets/rumpel.png";
 import scaleDownVine from "../assets/scaledown.png";
 import scaleUpVine from "../assets/scaleup.png";
@@ -13,6 +13,15 @@ export default function BottomNav({ active, setActive, openChatModal }) {
 
   const [msg, setMsg] = useState("");
   const [reply, setReply] = useState("");
+  const [showHelpBubble, setShowHelpBubble] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const idleTimer = useRef(null);
+
+  useEffect(() => {
+    if (dismissed) return;
+    idleTimer.current = setTimeout(() => setShowHelpBubble(true), 5000);
+    return () => clearTimeout(idleTimer.current);
+  }, [dismissed]);
 
   const send = () => {
     if (!msg.trim()) return;
@@ -41,6 +50,12 @@ export default function BottomNav({ active, setActive, openChatModal }) {
       </div>
 
       {FAB_CONFIG.show && <div className="nav-fab-wrap">
+        {showHelpBubble && (
+          <div className="fab-help-bubble">
+            <span className="fab-help-text">Need any help?</span>
+            <button className="fab-help-dismiss" onClick={(e) => { e.stopPropagation(); setDismissed(true); setShowHelpBubble(false); clearTimeout(idleTimer.current); }}>&times;</button>
+          </div>
+        )}
         {FAB_CONFIG.showQuickInput && (
           <div className="fab-chat">
             {reply && <div className="fab-chat-msg">🧙 {reply}</div>}

@@ -8,8 +8,7 @@ import LoginScreen from './components/screens/LoginScreen.jsx';
 import HomeScreen from './components/screens/HomeScreen.jsx';
 import CalendarScreen from './components/screens/CalendarScreen.jsx';
 import SettingsScreen from './components/screens/SettingsScreen.jsx';
-import TicketsScreen from './components/screens/TicketsScreen.jsx';
-import { initialTasks, RUMPEL_NERF_CALENDAR } from './utils/constants.js';
+import { initialTasks, TODAY } from './utils/constants.js';
 import { useDarkMode } from './hooks/useDarkMode.js';
 import { auth, googleProvider } from './utils/firebaseClient';
 import { onAuthStateChanged, signOut, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
@@ -21,7 +20,6 @@ export default function App() {
   const [tab, setTab] = useState("home");
   const [tasks, setTasks] = useState(initialTasks);
   const [chatModalOpen, setChatModalOpen] = useState(false);
-  const [chatModalEntryMode, setChatModalEntryMode] = useState("text");
   const [darkMode, setDarkMode] = useDarkMode();
   const [googleToken, setGoogleToken] = useState(null);
 
@@ -30,13 +28,6 @@ export default function App() {
       setLoggedIn(!!user);
       setAuthChecked(true);
       if (user) {
-        if (RUMPEL_NERF_CALENDAR) {
-          setGoogleToken(null);
-          localStorage.removeItem('google_access_token');
-          localStorage.removeItem('google_token_expiry');
-          return;
-        }
-
         const stored = localStorage.getItem('google_access_token');
         const expiry = localStorage.getItem('google_token_expiry');
         if (stored && expiry && Date.now() < Number(expiry)) {
@@ -60,22 +51,16 @@ export default function App() {
             });
           }
         }
-      } else {
-        setGoogleToken(null);
       }
     });
     return unsub;
   }, []);
 
   const handleLogin = (accessToken) => {
-    if (!RUMPEL_NERF_CALENDAR && accessToken) {
+    if (accessToken) {
       setGoogleToken(accessToken);
       localStorage.setItem('google_access_token', accessToken);
       localStorage.setItem('google_token_expiry', String(Date.now() + 3600000));
-    } else if (RUMPEL_NERF_CALENDAR) {
-      setGoogleToken(null);
-      localStorage.removeItem('google_access_token');
-      localStorage.removeItem('google_token_expiry');
     }
     setLoggedIn(true);
   };
@@ -97,11 +82,6 @@ export default function App() {
     }
   };
 
-  const openChatModal = (entryMode = "text") => {
-    setChatModalEntryMode(entryMode === "voice" ? "voice" : "text");
-    setChatModalOpen(true);
-  };
-
   return (
     <div className={`phone ${darkMode ? 'dark-mode' : ''}`}>
       {!done || !authChecked ? (
@@ -111,10 +91,7 @@ export default function App() {
       ) : (
         <>
           <div className={`screen ${tab === "home" ? "" : "hidden"}`}>
-            <HomeScreen tasks={tasks} openChatModal={openChatModal}/>
-          </div>
-          <div className={`screen ${tab === "tickets" ? "" : "hidden"}`}>
-            <TicketsScreen />
+            <HomeScreen tasks={tasks}/>
           </div>
           <div className={`screen ${tab === "calendar" ? "" : "hidden"}`}>
             <CalendarScreen tasks={tasks} setTasks={setTasks} googleToken={googleToken} onTokenExpired={() => { setGoogleToken(null); localStorage.removeItem('google_access_token'); localStorage.removeItem('google_token_expiry'); }}/>
@@ -122,14 +99,8 @@ export default function App() {
           <div className={`screen ${tab === "settings" ? "" : "hidden"}`}>
             <SettingsScreen darkMode={darkMode} setDarkMode={setDarkMode} onSignOut={handleSignOut}/>
           </div>
-          <BottomNav active={tab} setActive={setTab} openChatModal={openChatModal}/>
-          <ChatModal
-            isOpen={chatModalOpen}
-            onClose={() => setChatModalOpen(false)}
-            entryMode={chatModalEntryMode}
-            tasks={tasks}
-            setTasks={setTasks}
-          />
+          <BottomNav active={tab} setActive={setTab} openChatModal={() => setChatModalOpen(true)}/>
+          <ChatModal isOpen={chatModalOpen} onClose={() => setChatModalOpen(false)} tasks={tasks} setTasks={setTasks}/>
         </>
       )}
     </div>

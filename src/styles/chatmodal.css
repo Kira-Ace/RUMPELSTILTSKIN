@@ -231,10 +231,17 @@
 /* ===== Header ===== */
 .chat-modal-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 14px 16px;
+  padding: 10px 12px;
+  gap: 8px;
   flex-shrink: 0;
+}
+
+/* Flex roller fills the space between the two header icon buttons */
+.chat-header-roller {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .chat-header-btn {
@@ -273,6 +280,64 @@
 
 .chat-new-btn:hover {
   background: var(--bg-dim);
+}
+
+/* ===== History panel new-chat button ===== */
+.chat-history-new-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--brown-m);
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  margin-left: auto;
+}
+
+.chat-history-new-btn:hover {
+  background: var(--bg-low);
+  color: var(--brown);
+}
+
+/* ===== App Switcher Drum Roller (inside header) ===== */
+.app-drum-roller {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.app-drum-item {
+  font-family: 'Work Sans', sans-serif;
+}
+
+.app-drum-fade-left,
+.app-drum-fade-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.app-drum-fade-left {
+  left: 0;
+  background: linear-gradient(to right, var(--bg), transparent);
+}
+
+.app-drum-fade-right {
+  right: 0;
+  background: linear-gradient(to left, var(--bg), transparent);
+}
+
+.dark-mode .app-drum-fade-left {
+  background: linear-gradient(to right, #1a1410, transparent);
+}
+
+.dark-mode .app-drum-fade-right {
+  background: linear-gradient(to left, #1a1410, transparent);
 }
 
 /* ===== Messages ===== */
@@ -557,60 +622,82 @@
 
 /* ===== Suggestions accordion ===== */
 .chat-suggestions {
-  padding: 0 20px 12px 20px;
+  padding: 6px 16px 10px;
   flex-shrink: 0;
-  transform-origin: top center;
-  transition: none;
+  overflow: hidden;
+}
+
+.suggestions-slide-in {
+  animation: suggestionsSlideIn 0.26s cubic-bezier(0, 0, 0.2, 1) forwards;
 }
 
 .suggestions-slide-out {
-  animation: suggestionsSlideDown 0.28s cubic-bezier(0.4, 0, 1, 1) forwards;
+  animation: suggestionsSlideOut 0.22s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
-@keyframes suggestionsSlideDown {
+@keyframes suggestionsSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes suggestionsSlideOut {
   from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 0; transform: translateY(10px); }
 }
 
-.chat-suggestions-title {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--brown);
-  margin: 0 0 10px 0;
-}
-
-.chat-suggestion-row {
+.chat-suggestion-chips {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chat-suggestion-chip {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  width: 100%;
-  background: none;
-  border: none;
+  gap: 6px;
+  padding: 7px 13px;
+  background: var(--bg-low);
+  border: 1px solid var(--outline-v);
+  border-radius: 20px;
   cursor: pointer;
-  padding: 11px 4px;
   font-family: 'Work Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 450;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--brown-m);
-  border-radius: 8px;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  white-space: nowrap;
   text-align: left;
 }
 
-.chat-suggestion-row:hover {
-  background: var(--bg-low);
+.chat-suggestion-chip:hover {
+  background: var(--bg-dim);
+  border-color: var(--brown-m);
+  color: var(--brown);
 }
 
-.chat-suggestion-icon {
-  color: var(--brown-m);
+.chat-suggestion-chip:active {
+  transform: scale(0.96);
+}
+
+.chat-suggestion-chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chat-suggestion-chip-icon {
   flex-shrink: 0;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
-.chat-suggestion-more {
-  color: var(--brown-m);
-  opacity: 0.8;
+.chat-suggestion-chip-more {
+  background: none;
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+.chat-suggestion-chip-more:hover {
+  opacity: 1;
+  background: var(--bg-low);
 }
 
 /* ===== Input area ===== */
