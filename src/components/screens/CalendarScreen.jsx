@@ -210,7 +210,7 @@ export default function CalendarScreen({ tasks, setTasks }) {
   const selDowIdx = selDow(sel);
   const visibleCells = expanded ? rows.flat() : weekCells;
 
-  const CELL = 36, GAP = 2;
+  const CELL = 53, GAP = 2;
   const expH = rows.length * (CELL + GAP);
   const colH = CELL + GAP;
   const liveH = expanded ? expH : isPill ? Math.min(expH, colH + Math.max(0, pillDelta)) : colH;

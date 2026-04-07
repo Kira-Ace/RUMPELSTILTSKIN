@@ -7,7 +7,7 @@ import PreferencesScreen from './PreferencesScreen.jsx';
 import PreferencesPage from './PreferencesPage.jsx';
 import { auth } from '../../utils/firebaseClient';
 
-export default function SettingsScreen({ darkMode, setDarkMode }) {
+export default function SettingsScreen({ darkMode, setDarkMode, onSignOut }) {
   const [notifs, setNotifs] = useState(true);
   const [sounds, setSounds] = useState(true);
   const [user, setUser] = useState(null);
@@ -108,7 +108,7 @@ export default function SettingsScreen({ darkMode, setDarkMode }) {
           {/* Sign Out */}
           <div className="settings-group">
             <div className="settings-group-card">
-              <div className="settings-row settings-row-danger" onClick={() => auth.signOut()}>
+              <div className="settings-row settings-row-danger" onClick={onSignOut}>
                 <div className="settings-row-icon"><LogOut size={18} /></div>
                 <div className="settings-row-label">Sign Out</div>
               </div>
