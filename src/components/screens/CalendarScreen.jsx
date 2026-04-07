@@ -11,6 +11,7 @@ import {
   selDow, 
   formatDateKey 
 } from '../../utils/dateUtils.js';
+import { fetchGoogleCalendarEvents, groupEventsByDate } from '../../utils/googleCalendar.js';
 
 const HOURS_12 = Array.from({length: 12}, (_, i) => String(i + 1));
 const MINUTES = Array.from({length: 60}, (_, i) => String(i).padStart(2, '0'));
@@ -68,7 +69,7 @@ function TimeDrumPicker({ time, onChange }) {
   );
 }
 
-export default function CalendarScreen({ tasks, setTasks }) {
+export default function CalendarScreen({ tasks, setTasks, googleToken, onTokenExpired }) {
   const [sel, setSel] = useState({...TODAY});
   const [view, setView] = useState({y:TODAY.y, m:TODAY.m});
   const [expanded, setExpanded] = useState(false);
@@ -84,6 +85,7 @@ export default function CalendarScreen({ tasks, setTasks }) {
   const [pillY, setPillY] = useState(null);
   const [pillDelta, setPillDelta] = useState(0);
   const [anim, setAnim] = useState("");
+  const [googleEvents, setGoogleEvents] = useState({});
   
   const swipeX = useRef(null);
   const animT = useRef(null);
@@ -137,8 +139,36 @@ export default function CalendarScreen({ tasks, setTasks }) {
     if(expanded) setView({y:sel.y, m:sel.m}); 
   }, [expanded]);
 
+  // Fetch Google Calendar events when month changes
+  useEffect(() => {
+    // Try prop first, then fall back to localStorage
+    let token = googleToken;
+    if (!token) {
+      const stored = localStorage.getItem('google_access_token');
+      const expiry = localStorage.getItem('google_token_expiry');
+      if (stored && expiry && Date.now() < Number(expiry)) {
+        token = stored;
+      }
+    }
+    if (!token) { 
+      setGoogleEvents({}); 
+      return; 
+    }
+    const y = view.y, m = view.m;
+    const timeMin = new Date(y, m, 1).toISOString();
+    const timeMax = new Date(y, m + 1, 0, 23, 59, 59).toISOString();
+    fetchGoogleCalendarEvents(token, timeMin, timeMax).then(result => {
+      if (result && result.error === 'token_expired') {
+        onTokenExpired?.();
+        setGoogleEvents({});
+        return;
+      }
+      setGoogleEvents(groupEventsByDate(result));
+    });
+  }, [view.y, view.m, googleToken]);
+
   const taskKey = formatDateKey(sel.y, sel.m, sel.d);
-  const selTasks = tasks[taskKey] || [];
+  const selTasks = [...(tasks[taskKey] || []), ...(googleEvents[taskKey] || [])];
 
   const openModal = () => {
     clearTimeout(modalCloseT.current);
@@ -222,7 +252,8 @@ export default function CalendarScreen({ tasks, setTasks }) {
     const isSel = isVisible && cell.d === sel.d && cell.m === sel.m && cell.y === sel.y;
     const isTod = cur && cell.d === TODAY.d && cell.m === TODAY.m && cell.y === TODAY.y;
     const ck = formatDateKey(cell.y, cell.m, cell.d);
-    const dots = cur && (tasks[ck] || []).length > 0;
+    const localDots = cur ? (tasks[ck] || []).length : 0;
+    const googleDots = cur ? (googleEvents[ck] || []).length : 0;
 
     return (
       <div className="day-cell" onClick={() => {
@@ -239,8 +270,11 @@ export default function CalendarScreen({ tasks, setTasks }) {
           {cell.d}
         </div>
         <div className="day-dots">
-          {dots && Array.from({length: Math.min((tasks[ck] || []).length, 3)}).map((_, i) => (
-            <div key={i} className={`day-dot ${isSel ? "sel" : ""}`}/>
+          {localDots > 0 && Array.from({length: Math.min(localDots, 3)}).map((_, i) => (
+            <div key={`l${i}`} className={`day-dot ${isSel ? "sel" : ""}`}/>
+          ))}
+          {googleDots > 0 && Array.from({length: Math.min(googleDots, 2)}).map((_, i) => (
+            <div key={`g${i}`} className={`day-dot day-dot-google ${isSel ? "sel" : ""}`}/>
           ))}
         </div>
       </div>
@@ -374,24 +408,26 @@ export default function CalendarScreen({ tasks, setTasks }) {
         {/* Tasks */}
         <div className="tasks-scroll">
           {selTasks.map((t, i) => {
-            const tagColors = {"Math": "#5B8DEE", "Science":"#EA4335", "English":"#FBBC04", "History":"#34A853", "Other":"#FA7B17"};
+            const tagColors = {"Math": "#5B8DEE", "Science":"#EA4335", "English":"#FBBC04", "History":"#34A853", "Other":"#FA7B17", "Google":"#4285F4"};
             const tagColor = tagColors[t.tag] || "#9E9E9E";
             return (
-              <div key={t.id} className={`task-card ${t.accent ? "accent" : ""}`}>
+              <div key={t.id} className={`task-card ${t.accent ? "accent" : ""} ${t.isGoogleEvent ? "google-event" : ""}`}>
                 <div className="task-indicator" style={{background: tagColor}}/>
                 <div className="task-content">
-                  <div className="task-title">{t.title}</div>
+                  <div className="task-title">{t.title}{t.isGoogleEvent && <span className="google-badge">G</span>}</div>
                   {t.desc && <div className="task-desc">{t.desc}</div>}
                   {t.time && <div className="task-time">{t.time}</div>}
                 </div>
-                <div className="task-actions">
-                  <button onClick={() => startEdit(t)} style={{background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--brown-m)"}}>
-                    <Edit3 size={18}/>
-                  </button>
-                  <button onClick={() => deleteTask(t.id)} style={{background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center", justifyContent:"center", transition:"transform 0.1s", color:"var(--outline)", opacity:0.6}} onMouseDown={(e) => {e.currentTarget.style.transform = "scale(0.85)"}} onMouseUp={(e) => {e.currentTarget.style.transform = "scale(1)"}} onMouseLeave={(e) => {e.currentTarget.style.transform = "scale(1)"}}>
-                    <Trash2 size={18}/>
-                  </button>
-                </div>
+                {!t.isGoogleEvent && (
+                  <div className="task-actions">
+                    <button onClick={() => startEdit(t)} style={{background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--brown-m)"}}>
+                      <Edit3 size={18}/>
+                    </button>
+                    <button onClick={() => deleteTask(t.id)} style={{background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center", justifyContent:"center", transition:"transform 0.1s", color:"var(--outline)", opacity:0.6}} onMouseDown={(e) => {e.currentTarget.style.transform = "scale(0.85)"}} onMouseUp={(e) => {e.currentTarget.style.transform = "scale(1)"}} onMouseLeave={(e) => {e.currentTarget.style.transform = "scale(1)"}}>
+                      <Trash2 size={18}/>
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}

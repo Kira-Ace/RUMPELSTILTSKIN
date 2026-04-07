@@ -29,6 +29,7 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 
 // Initialize OAuth Providers
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('https://www.googleapis.com/auth/calendar.readonly');
 export const facebookProvider = new FacebookAuthProvider();
 export const microsoftProvider = new OAuthProvider('microsoft.com');
 

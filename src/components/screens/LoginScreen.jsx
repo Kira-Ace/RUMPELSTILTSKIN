@@ -19,6 +19,7 @@ import {
 import {
   createUserWithEmailAndPassword,
   EmailAuthProvider,
+  GoogleAuthProvider,
   linkWithCredential,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -413,7 +414,19 @@ export default function LoginScreen({ onLogin }) {
           localStorage.setItem(`user_age_${result.user.uid}`, age);
         }
 
-        onLogin();
+        // Extract Google access token for Calendar API
+        let googleAccessToken = null;
+        if (provider === googleProvider) {
+          const credential = GoogleAuthProvider.credentialFromResult(result);
+          if (credential) {
+            googleAccessToken = credential.accessToken;
+            // Store immediately in localStorage as safety net
+            localStorage.setItem('google_access_token', googleAccessToken);
+            localStorage.setItem('google_token_expiry', String(Date.now() + 3600000));
+          }
+        }
+
+        onLogin(googleAccessToken);
       }
     } catch (err) {
       console.error('OAuth error:', err);

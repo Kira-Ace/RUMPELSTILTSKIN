@@ -1,1 +1,1 @@
-# Turning your shit to gold
+# Time is gold. We all have straw. Give us your straw. We'll make it gold.
