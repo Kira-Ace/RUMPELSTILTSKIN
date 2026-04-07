@@ -8,7 +8,7 @@ import scaleUpVine from "../assets/scaleup.png";
  * Bottom Navigation component for the Rumpel app.
  * Features a pill-shaped nav container and interactive Rumpel FAB.
  */
-export default function BottomNav({ active, setActive, setChatModalOpen }) {
+export default function BottomNav({ active, setActive, openChatModal }) {
   const tabs = [
     { id: "home", Icon: Home },
     { id: "calendar", Icon: CalendarDays },
@@ -65,7 +65,7 @@ export default function BottomNav({ active, setActive, setChatModalOpen }) {
             </button>
           </div>
         </div>
-        <button className="nav-fab" onClick={() => setChatModalOpen(true)}>
+        <button className="nav-fab" onClick={() => openChatModal?.("text")}>
           <img src={rumpelIcon} alt="Rumpel" style={{width: "32px", height: "32px", filter: "drop-shadow(1px 2px 2px rgba(183, 81, 47, 0.75))"}} />
         </button>
       </div>

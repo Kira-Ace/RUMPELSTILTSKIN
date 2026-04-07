@@ -679,6 +679,125 @@
   cursor: not-allowed;
 }
 
+/* Voice input panel */
+.chat-voice-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-voice-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Work Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brown-m);
+}
+
+.chat-voice-transcript {
+  min-height: 64px;
+  max-height: 108px;
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px dashed rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.75);
+  padding: 10px 12px;
+  font-family: 'Work Sans', sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--brown-m);
+}
+
+.chat-voice-transcript.has-content {
+  color: var(--brown);
+  border-style: solid;
+}
+
+.chat-voice-error {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 12px;
+  color: #a73f22;
+}
+
+.chat-voice-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-voice-btn,
+.chat-voice-send-btn {
+  border: 1.5px solid var(--orange-l);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--brown);
+  font-family: 'Work Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+.chat-voice-btn {
+  padding: 0 14px;
+  min-width: 104px;
+}
+
+.chat-voice-send-btn {
+  flex: 1;
+  min-width: 88px;
+}
+
+.chat-voice-btn:hover:not(:disabled),
+.chat-voice-send-btn:hover:not(:disabled) {
+  background: var(--bg-low);
+  border-color: var(--orange-m);
+  transform: translateY(-1px);
+}
+
+.chat-voice-btn:disabled,
+.chat-voice-send-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.chat-voice-btn-live {
+  background: var(--orange-m);
+  color: #fff;
+  border-color: var(--orange-m);
+}
+
+.dark-mode .chat-voice-status {
+  color: var(--brown);
+  opacity: 0.85;
+}
+
+.dark-mode .chat-voice-transcript {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--brown);
+}
+
+.dark-mode .chat-voice-btn,
+.dark-mode .chat-voice-send-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 170, 102, 0.35);
+  color: var(--brown);
+}
+
+.dark-mode .chat-voice-btn-live {
+  background: var(--orange-m);
+  color: #fff;
+  border-color: var(--orange-m);
+}
+
 /* Tag pills row */
 .chat-input-tags {
   display: flex;

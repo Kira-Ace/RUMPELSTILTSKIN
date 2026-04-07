@@ -20,6 +20,7 @@ export default function App() {
   const [tab, setTab] = useState("home");
   const [tasks, setTasks] = useState(initialTasks);
   const [chatModalOpen, setChatModalOpen] = useState(false);
+  const [chatModalEntryMode, setChatModalEntryMode] = useState("text");
   const [darkMode, setDarkMode] = useDarkMode();
   const [googleToken, setGoogleToken] = useState(null);
 
@@ -95,6 +96,11 @@ export default function App() {
     }
   };
 
+  const openChatModal = (entryMode = "text") => {
+    setChatModalEntryMode(entryMode === "voice" ? "voice" : "text");
+    setChatModalOpen(true);
+  };
+
   return (
     <div className={`phone ${darkMode ? 'dark-mode' : ''}`}>
       {!done || !authChecked ? (
@@ -104,7 +110,7 @@ export default function App() {
       ) : (
         <>
           <div className={`screen ${tab === "home" ? "" : "hidden"}`}>
-            <HomeScreen tasks={tasks}/>
+            <HomeScreen tasks={tasks} openChatModal={openChatModal}/>
           </div>
           <div className={`screen ${tab === "calendar" ? "" : "hidden"}`}>
             <CalendarScreen tasks={tasks} setTasks={setTasks} googleToken={googleToken} onTokenExpired={() => { setGoogleToken(null); localStorage.removeItem('google_access_token'); localStorage.removeItem('google_token_expiry'); }}/>
@@ -112,8 +118,14 @@ export default function App() {
           <div className={`screen ${tab === "settings" ? "" : "hidden"}`}>
             <SettingsScreen darkMode={darkMode} setDarkMode={setDarkMode} onSignOut={handleSignOut}/>
           </div>
-          <BottomNav active={tab} setActive={setTab} setChatModalOpen={setChatModalOpen}/>
-          <ChatModal isOpen={chatModalOpen} onClose={() => setChatModalOpen(false)} tasks={tasks} setTasks={setTasks}/>
+          <BottomNav active={tab} setActive={setTab} openChatModal={openChatModal}/>
+          <ChatModal
+            isOpen={chatModalOpen}
+            onClose={() => setChatModalOpen(false)}
+            entryMode={chatModalEntryMode}
+            tasks={tasks}
+            setTasks={setTasks}
+          />
         </>
       )}
     </div>

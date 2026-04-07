@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import rumpelImg from '../assets/rumpel.png';
 
-export default function RoomCenterpiece() {
+export default function RoomCenterpiece({ onActivateVoiceChat }) {
   const imgRef = useRef(null);
   const mouse = useRef({ x: 0, y: 0 });
   const smooth = useRef({ x: 0, y: 0 });
@@ -46,12 +46,19 @@ export default function RoomCenterpiece() {
 
   return (
     <div className="room-centerpiece">
-      <img
-        ref={imgRef}
-        src={rumpelImg}
-        alt="Rumpelstiltskin"
-        className="centerpiece-img"
-      />
+      <button
+        type="button"
+        className="room-centerpiece-trigger"
+        onClick={() => onActivateVoiceChat?.()}
+        aria-label="Open voice chat"
+      >
+        <img
+          ref={imgRef}
+          src={rumpelImg}
+          alt="Rumpelstiltskin"
+          className="centerpiece-img"
+        />
+      </button>
     </div>
   );
 }
