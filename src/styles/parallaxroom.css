@@ -24,6 +24,24 @@
   pointer-events: none;
 }
 
+.room-centerpiece-trigger {
+  pointer-events: auto;
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 20px;
+  touch-action: manipulation;
+}
+
+.room-centerpiece-trigger:focus-visible {
+  outline: 2px solid var(--orange-m);
+  outline-offset: 6px;
+}
+
 .centerpiece-img {
   max-width: 45%;
   max-height: 60%;

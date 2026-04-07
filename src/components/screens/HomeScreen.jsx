@@ -6,7 +6,7 @@ import { TODAY } from '../../utils/constants.js';
 import { formatDateKey } from '../../utils/dateUtils.js';
 import { Plus, RefreshCw, List, MoreHorizontal } from 'lucide-react';
 
-export default function HomeScreen({ tasks }) {
+export default function HomeScreen({ tasks, openChatModal }) {
   const todayTasks = tasks[formatDateKey(TODAY.y, TODAY.m, TODAY.d)] || [];
 
   return (
@@ -18,7 +18,7 @@ export default function HomeScreen({ tasks }) {
           {/* 3D Parallax Room Background */}
           <div className="home-hero-section">
             <ParallaxRoom />
-            <RoomCenterpiece />
+            <RoomCenterpiece onActivateVoiceChat={() => openChatModal?.("voice")} />
 
             {/* Widget action buttons row */}
             <div className="home-widget-row">

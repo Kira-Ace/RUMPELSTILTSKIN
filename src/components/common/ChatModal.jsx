@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { X, Menu, ChevronDown, Plus, Zap, Circle, Loader2, Send, FileText, Search, LayoutGrid, Paperclip, Image as ImageIcon, XCircle, MessageSquare, Trash2, Pencil, Check } from "lucide-react";
+import { X, Menu, ChevronDown, Plus, Zap, Circle, Loader2, Send, FileText, Search, LayoutGrid, XCircle, MessageSquare, Trash2, Pencil, Check, Mic, MicOff, Volume2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rumpelIcon from "../assets/rumpel.png";
@@ -117,6 +117,27 @@ function stripJsonFence(text) {
   return fenceMatch ? fenceMatch[1].trim() : trimmed;
 }
 
+function getSpeechRecognitionErrorMessage(errorCode) {
+  if (errorCode === "not-allowed") return "Microphone permission was denied.";
+  if (errorCode === "audio-capture") return "No microphone was found on this device.";
+  if (errorCode === "network") return "Speech recognition network issue. Try again.";
+  if (errorCode === "no-speech") return "No speech detected. Try again.";
+  return "Voice input failed. Please try again.";
+}
+
+function stripMarkdownForSpeech(text) {
+  if (typeof text !== "string") return "";
+
+  return text
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[>#*_~]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function normalizeTaskForCreation(rawTask) {
   if (!rawTask || typeof rawTask !== "object") return null;
 
@@ -222,7 +243,7 @@ async function generateTitle(messages) {
   }
 }
 
-export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
+export default function ChatModal({ isOpen, onClose, entryMode = "text", tasks = {}, setTasks }) {
   const nextChatIdRef = useRef(1);
   const nextMessageIdRef = useRef(1);
 
@@ -248,7 +269,16 @@ export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
   const [editingTitle, setEditingTitle] = useState("");
   const [suggestionsSliding, setSuggestionsSliding] = useState(false);
   const [questionDrafts, setQuestionDrafts] = useState({});
+  const [inputMode, setInputMode] = useState(() => (entryMode === "voice" ? "voice" : "text"));
+  const [voiceSupported, setVoiceSupported] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceDraft, setVoiceDraft] = useState("");
+  const [voiceError, setVoiceError] = useState("");
   const fileInputRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const finalTranscriptRef = useRef("");
+  const speechUtteranceRef = useRef(null);
+  const lastSpokenMessageIdRef = useRef(null);
 
   /* derived */
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0];
@@ -273,6 +303,42 @@ export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
     setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)));
   };
 
+  const clearVoiceDraft = useCallback(() => {
+    finalTranscriptRef.current = "";
+    setVoiceDraft("");
+  }, []);
+
+  const stopSpeaking = useCallback(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    speechUtteranceRef.current = null;
+  }, []);
+
+  const stopVoiceCapture = useCallback(() => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // no-op
+      }
+    }
+    setIsListening(false);
+  }, []);
+
+  const startVoiceCapture = useCallback(() => {
+    if (!voiceSupported || !recognitionRef.current || loading) return;
+    setVoiceError("");
+    try {
+      recognitionRef.current.start();
+      setIsListening(true);
+    } catch (error) {
+      if (error?.name !== "InvalidStateError") {
+        setVoiceError("Couldn't start microphone. Check browser permission and try again.");
+        setIsListening(false);
+      }
+    }
+  }, [loading, voiceSupported]);
+
   const sendQuestionReply = (questionKey) => {
     const reply = (questionDrafts[questionKey] || "").trim();
     if (!reply || loading) return;
@@ -292,6 +358,8 @@ export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
 
   const requestClose = useCallback(() => {
     if (isClosing) return;
+    stopVoiceCapture();
+    stopSpeaking();
     clearTimeout(closeTimerRef.current);
     setIsClosing(true);
     closeTimerRef.current = setTimeout(() => {
@@ -299,7 +367,7 @@ export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
       setIsClosing(false);
       onClose();
     }, 260);
-  }, [isClosing, onClose]);
+  }, [isClosing, onClose, stopSpeaking, stopVoiceCapture]);
 
   /* reset height when modal opens */
   useEffect(() => {
@@ -308,10 +376,116 @@ export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
       setIsRendered(true);
       setIsClosing(false);
       setSheetHeight(SNAP_MID);
+      setInputMode(entryMode === "voice" ? "voice" : "text");
+      setVoiceError("");
+      if (entryMode !== "voice") {
+        clearVoiceDraft();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, entryMode, clearVoiceDraft]);
 
-  useEffect(() => () => clearTimeout(closeTimerRef.current), []);
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionApi) {
+      setVoiceSupported(false);
+      return undefined;
+    }
+
+    const recognition = new SpeechRecognitionApi();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event) => {
+      let interimTranscript = "";
+
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const transcript = event.results[i][0]?.transcript || "";
+        if (event.results[i].isFinal) {
+          finalTranscriptRef.current = `${finalTranscriptRef.current} ${transcript}`.trim();
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      setVoiceDraft(`${finalTranscriptRef.current} ${interimTranscript}`.trim());
+      setVoiceError("");
+    };
+
+    recognition.onerror = (event) => {
+      setVoiceError(getSpeechRecognitionErrorMessage(event.error));
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    setVoiceSupported(true);
+
+    return () => {
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
+      try {
+        recognition.stop();
+      } catch {
+        // no-op
+      }
+      recognitionRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && inputMode === "voice") {
+      startVoiceCapture();
+      return;
+    }
+
+    stopVoiceCapture();
+  }, [isOpen, inputMode, startVoiceCapture, stopVoiceCapture]);
+
+  useEffect(() => {
+    if (!isOpen || inputMode !== "voice") return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    const latestAssistantMessage = [...messages].reverse().find(
+      (message) =>
+        message.role === "assistant" &&
+        !message.pending &&
+        typeof message.text === "string" &&
+        message.text.trim()
+    );
+
+    if (!latestAssistantMessage) return;
+    if (latestAssistantMessage.id === lastSpokenMessageIdRef.current) return;
+
+    const speechText = stripMarkdownForSpeech(latestAssistantMessage.text);
+    if (!speechText || speechText.toLowerCase().startsWith("error:")) return;
+
+    stopSpeaking();
+    const utterance = new SpeechSynthesisUtterance(speechText);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.onend = () => {
+      if (speechUtteranceRef.current === utterance) {
+        speechUtteranceRef.current = null;
+      }
+    };
+
+    speechUtteranceRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+    lastSpokenMessageIdRef.current = latestAssistantMessage.id;
+  }, [messages, inputMode, isOpen, stopSpeaking]);
+
+  useEffect(() => () => {
+    clearTimeout(closeTimerRef.current);
+    stopVoiceCapture();
+    stopSpeaking();
+  }, [stopVoiceCapture, stopSpeaking]);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -521,6 +695,8 @@ export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
     setActiveChatId(fresh.id);
     setInput("");
     setAttachments([]);
+    clearVoiceDraft();
+    setVoiceError("");
     setQuestionDrafts({});
     setSuggestionsSliding(false);
     setShowHistory(false);
@@ -530,6 +706,8 @@ export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
     setActiveChatId(id);
     setInput("");
     setAttachments([]);
+    clearVoiceDraft();
+    setVoiceError("");
     setQuestionDrafts({});
     setShowHistory(false);
   };
@@ -552,7 +730,31 @@ export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
     send(suggestion?.prompt || label);
   };
 
+  const toggleVoiceCapture = () => {
+    if (isListening) {
+      stopVoiceCapture();
+      return;
+    }
+
+    startVoiceCapture();
+  };
+
+  const sendVoiceDraft = () => {
+    const transcript = voiceDraft.trim();
+    if (!transcript || loading) return;
+
+    stopVoiceCapture();
+    clearVoiceDraft();
+    send(transcript);
+  };
+
+  const toggleInputMode = () => {
+    setVoiceError("");
+    setInputMode((prev) => (prev === "voice" ? "text" : "voice"));
+  };
+
   const visibleSuggestions = showAllSuggestions ? SUGGESTIONS : SUGGESTIONS.slice(0, 3);
+  const hasVoiceDraft = voiceDraft.trim().length > 0;
 
   if (!isRendered) return null;
 
@@ -794,53 +996,99 @@ export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
 
         {/* Input */}
         <div className="chat-modal-input-area">
-          {/* Attachment previews */}
-          {attachments.length > 0 && (
-            <div className="chat-attach-preview-row">
-              {attachments.map((a, i) => (
-                <div key={i} className="chat-attach-preview">
-                  {a.preview
-                    ? <img src={a.preview} alt={a.name} className="chat-attach-preview-img" />
-                    : <span className="chat-attach-preview-name">📎 {a.name}</span>
-                  }
-                  <button className="chat-attach-remove" onClick={() => removeAttachment(i)}>
-                    <XCircle size={14} />
-                  </button>
-                </div>
-              ))}
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,.pdf,.txt,.md,.csv,.json"
+            multiple
+            style={{ display: "none" }}
+            onChange={handleFileSelect}
+          />
+
+          {inputMode === "voice" ? (
+            <div className="chat-voice-panel">
+              <div className="chat-voice-status">
+                <Volume2 size={14} />
+                <span>{isListening ? "Listening…" : "Voice mode ready"}</span>
+              </div>
+              <div className={`chat-voice-transcript ${hasVoiceDraft ? "has-content" : ""}`} aria-live="polite">
+                {hasVoiceDraft
+                  ? voiceDraft
+                  : "Tap the mic and speak. Your words appear here in real time."}
+              </div>
+              {!voiceSupported && (
+                <div className="chat-voice-error">Voice input is not supported in this browser. Switch to text mode to continue.</div>
+              )}
+              {voiceError && (
+                <div className="chat-voice-error">{voiceError}</div>
+              )}
+              <div className="chat-voice-actions">
+                <button
+                  type="button"
+                  className={`chat-voice-btn ${isListening ? "chat-voice-btn-live" : ""}`}
+                  onClick={toggleVoiceCapture}
+                  disabled={!voiceSupported || loading}
+                >
+                  {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                  <span>{isListening ? "Stop" : "Talk"}</span>
+                </button>
+                <button
+                  type="button"
+                  className="chat-voice-send-btn"
+                  onClick={sendVoiceDraft}
+                  disabled={loading || !hasVoiceDraft}
+                >
+                  <Send size={15} />
+                  <span>Send</span>
+                </button>
+              </div>
             </div>
+          ) : (
+            <>
+              {/* Attachment previews */}
+              {attachments.length > 0 && (
+                <div className="chat-attach-preview-row">
+                  {attachments.map((a, i) => (
+                    <div key={i} className="chat-attach-preview">
+                      {a.preview
+                        ? <img src={a.preview} alt={a.name} className="chat-attach-preview-img" />
+                        : <span className="chat-attach-preview-name">📎 {a.name}</span>
+                      }
+                      <button className="chat-attach-remove" onClick={() => removeAttachment(i)}>
+                        <XCircle size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="chat-input-row">
+                <input
+                  type="text"
+                  className="chat-input"
+                  placeholder="Message Rumpel…"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !loading && send()}
+                  disabled={loading}
+                />
+                <button
+                  className="chat-send-btn"
+                  onClick={() => send()}
+                  disabled={loading || (!input.trim() && attachments.length === 0)}
+                >
+                  {loading ? <Loader2 size={18} className="spin" /> : <Send size={18} />}
+                </button>
+              </div>
+            </>
           )}
-          <div className="chat-input-row">
-            <input
-              type="text"
-              className="chat-input"
-              placeholder="Message Rumpel…"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !loading && send()}
-              disabled={loading}
-            />
-            <button
-              className="chat-send-btn"
-              onClick={() => send()}
-              disabled={loading || (!input.trim() && attachments.length === 0)}
-            >
-              {loading ? <Loader2 size={18} className="spin" /> : <Send size={18} />}
-            </button>
-          </div>
+
           <div className="chat-input-tags">
-            {/* Hidden file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,.pdf,.txt,.md,.csv,.json"
-              multiple
-              style={{ display: "none" }}
-              onChange={handleFileSelect}
-            />
-            <button className="chat-tag-btn" onClick={() => fileInputRef.current?.click()}>
-              <Plus size={14} />
-            </button>
+            {inputMode !== "voice" && (
+              <button className="chat-tag-btn" onClick={() => fileInputRef.current?.click()}>
+                <Plus size={14} />
+              </button>
+            )}
             <button
               className={`chat-tag-btn ${mode === "fast" ? "chat-tag-active" : ""}`}
               onClick={() => setMode("fast")}
@@ -852,6 +1100,12 @@ export default function ChatModal({ isOpen, onClose, tasks = {}, setTasks }) {
               onClick={() => setMode("auto")}
             >
               <Circle size={14} /> Auto
+            </button>
+            <button
+              className={`chat-tag-btn ${inputMode === "voice" ? "chat-tag-active" : ""}`}
+              onClick={toggleInputMode}
+            >
+              {inputMode === "voice" ? <MicOff size={14} /> : <Mic size={14} />} Voice
             </button>
           </div>
         </div>
